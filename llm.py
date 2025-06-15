@@ -3,7 +3,7 @@ import streamlit as st
 from config import PROMPT_CODE_SNIPPET_TEMPLATE
 
 def get_installed_models():
-    return [model['name'] for model in ollama.list()['models']]
+    return [model.model for model in ollama.list()['models']]
 
 def get_llm_response(prompt: str):
     model = st.session_state['model']
