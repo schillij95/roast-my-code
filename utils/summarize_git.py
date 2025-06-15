@@ -1,6 +1,5 @@
 import ollama
 from typing import Dict, Any
-import json
 from llm import get_llm_response
 
 # A default prompt to critique code – customize as needed
@@ -46,13 +45,3 @@ def critique_code_dict(code_dict: Dict[str, Any]) -> Dict[str, Any]:
             result[key] = "Unknown format"
 
     return result
-
-if __name__ == "__main__":
-    # load a sample code dictionary for testing
-    dict_name = "schillij95_full_profile.json"
-    with open(dict_name, 'r') as f:
-        code_dict = json.load(f)
-    # critique the code dictionary
-    critique_result = critique_code_dict(code_dict)
-    # print the critique result
-    print(json.dumps(critique_result, indent=2, ensure_ascii=False))
