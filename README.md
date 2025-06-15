@@ -32,3 +32,10 @@ To run the application, use:
 ```bash
 streamlit run main.py
 ```
+
+If you want to use the speech output feature, you need to install `kokoro`, `soundfile` and `espeak-ng`. You can do this by running:
+```bash
+!pip install -q kokoro>=0.9.2 soundfile
+!apt-get -qq -y install espeak-ng > /dev/null 2>&1
+```
+(See the [kokoro huggingface page](https://huggingface.co/hexgrad/Kokoro-82M) for more information.)
