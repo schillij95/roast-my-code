@@ -1,15 +1,22 @@
 import streamlit as st
-from llm import get_installed_models, generate_code_roast
+from utils.llm import get_model_names, generate_code_roast
 from config import ROAST_STYLES, EXAMPLE_SNIPPETS
 
 def init():
+    """
+    Initialize session state variables for available models and selected model.
+    """
     if 'available_models' not in st.session_state:
-        st.session_state['available_models'] = get_installed_models()
+        st.session_state['available_models'] = get_model_names()
     if 'model' not in st.session_state:
-        st.session_state['model'] = st.session_state['available_models']
+        # Default to the first available model
+        st.session_state['model'] = st.session_state['available_models'][0]
 
 @st.dialog("🔥 Roast", width="large")
 def response_dialog(generator):
+    """
+    Display the streaming response from the code roast generator in a dialog.
+    """
     response = ""
     with st.empty():
         for chunk in generator:
@@ -17,13 +24,23 @@ def response_dialog(generator):
             st.write(response)
 
 def on_click_roast_snippet(code_snippet, roast_style, detailed=False):
-    generator = generate_code_roast(code_snippet, detailed=detailed, roast_style=roast_style)
+    """
+    Callback for roast buttons. Generates and displays a code roast.
+    """
+    generator = generate_code_roast(
+        code_snippet, 
+        detailed=detailed, 
+        roast_style=roast_style
+    )
     response_dialog(generator)
-    
 
 def model_selection(container):
+    """
+    Render a model selection dropdown in the given container.
+    """
     models = st.session_state['available_models']
-    model_index = models.index(st.session_state['model']) if st.session_state['model'] in models else 0
+    current_model = st.session_state['model']
+    model_index = models.index(current_model) if current_model in models else 0
     st.session_state['model'] = container.selectbox(
         "Select LLM Model",
         options=models,
@@ -31,27 +48,56 @@ def model_selection(container):
     )
 
 def roast_style_selection(container):
-    return container.selectbox("Select Roast Style", options=ROAST_STYLES, index=0, accept_new_options=True)
+    """
+    Render a roast style selection dropdown in the given container.
+    """
+    return container.selectbox(
+        "Select Roast Style", 
+        options=ROAST_STYLES, 
+        index=0, 
+        accept_new_options=True
+    )
 
 def draw_sidebar():
+    """
+    Draw the sidebar with model and roast style selection.
+    """
     model_selection(container=st.sidebar)
     st.session_state['roast_style'] = roast_style_selection(container=st.sidebar)
 
 def draw_example_snippets():
+    """
+    Render example snippet pills and return the selected snippet's code.
+    """
     example_names = [snippet['title'] for snippet in EXAMPLE_SNIPPETS]
-    selected_snippet_name = st.pills(label='Examples', options=example_names, default=None)
-    selected_snippet_code = next((snippet['code'] for snippet in EXAMPLE_SNIPPETS if snippet['title'] == selected_snippet_name), "")
+    selected_snippet_name = st.pills(
+        label='Examples', 
+        options=example_names, 
+        default=None
+    )
+    selected_snippet_code = next(
+        (snippet['code'] for snippet in EXAMPLE_SNIPPETS if snippet['title'] == selected_snippet_name), 
+        ""
+    )
     return selected_snippet_code
 
 def draw_page():
+    """
+    Draw the main page layout with code input and roast buttons.
+    """
     st.title("Roast my Code")
-    
     tabs = st.tabs(["Code Snippet", "Github URL"])
-    
+
     with tabs[0]:
         selected_snippet_code = draw_example_snippets()
-        code_snippet = st.text_area("Enter your Code", value=selected_snippet_code, height=300, placeholder="Paste your code snippet here...")
+        code_snippet = st.text_area(
+            "Enter your Code", 
+            value=selected_snippet_code, 
+            height=300, 
+            placeholder="Paste your code snippet here..."
+        )
         cols = st.columns(2)
+        # Quick Roast button
         cols[0].button(
             "Quick Roast", 
             use_container_width=True, 
@@ -63,6 +109,7 @@ def draw_page():
             },
             disabled=not code_snippet.strip()
         )
+        # Detailed Roast button
         cols[1].button(
             "Detailed Roast", 
             use_container_width=True, 
@@ -76,9 +123,12 @@ def draw_page():
         )
     with tabs[1]:
         st.write("Enter the URL of your GitHub repository containing the code you want to roast.")
-        github_repo = st.text_input("Enter the github repository URL")
+        st.text_input("Enter the github repository URL")
 
 def main():
+    """
+    Main entry point for the Streamlit app.
+    """
     init()
     draw_sidebar()
     draw_page()
