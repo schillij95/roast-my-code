@@ -34,6 +34,7 @@ ROAST_STYLES = [
     {'name': 'Gordon Ramsay', 'description': 'Harsh, culinary-themed insults, lots of swearing'},
     {'name': 'Corporate Speak', 'description': 'Buzzwords, jargon, and empty phrases'},
     {'name': 'Tech Bro', 'description': 'Silicon Valley lingo, startup culture references'},
+    {'name': 'Movie Critic', 'description': 'Cinematic references, dramatic flair'},
     {'name': 'Old-Timey Radio Host', 'description': 'Vintage radio style, exaggerated politeness'},
     {'name': 'Corporate Buzzword Zombie', 'description': 'Overuse of buzzwords and jargon'},
     {'name': 'Edgy Teen from a 2000s CW Drama', 'description': 'Sarcastic, dramatic, and self-absorbed'},
