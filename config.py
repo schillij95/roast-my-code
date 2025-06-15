@@ -36,68 +36,6 @@ ROAST_STYLES = [
 
 EXAMPLE_SNIPPETS = [
     {
-        'title': 'Indentation Insanity',
-        'code': '''
-def doSomething():
- x=1
-  y=2
-   if x<y:
-    print( "bad indentation" )
-  else:
-      print("this won't run")
-        '''
-    },
-    {
-        'title': 'Global Mayhem',
-        'code': '''
-x = 5
-def changeX():
-    global x
-    x = 'now I am a string'
-    print(x)
-changeX()
-print(x)
-        '''
-    },
-    {
-        'title': 'The Infinite Mystery',
-        'code': '''
-def loop():
- while True:
-  pass
-loop()
-        '''
-    },
-    {
-        'title': 'Spaghetti Logic',
-        'code': '''
-x = 10
-if x > 5:
-    if x < 15:
-        if x != 12:
-            if x == 10:
-                print("confusing, but okay")
-        '''
-    },
-    {
-        'title': 'Naming Nightmare',
-        'code': '''
-a = 1
-aa = 2
-aaa = a + aa
-aaaa = aaa * 2
-print(aaaa)
-        '''
-    },
-    {
-        'title': 'Hardcoded Everything',
-        'code': '''
-print("Your name is Bob")
-print("Your age is 42")
-print("Your favorite food is spaghetti")
-        '''
-    },
-    {
         'title': 'Comment Confusion',
         'code': '''
 # This function calculates the mass of the sun in turtles
@@ -106,33 +44,164 @@ def add(a, b):
         '''
     },
     {
-        'title': 'The Mystery Function',
-        'code': '''
-def ???():
-    print("What is happening")
-        '''
+        "title": "Infinite Recursion for No Reason",
+        "code": """
+    def do_nothing():
+        return do_nothing()
+
+    do_nothing()
+    """
     },
     {
-        'title': 'Overengineered Simplicity',
-        'code': '''
-def identity(x):
-    def wrapper(y):
-        return y
-    return wrapper(x)
-print(identity("hello"))
-        '''
+        "title": "Everything is Global",
+        "code": """
+    x = 1
+
+    def add():
+        global x
+        x = x + 1
+        return x
+
+    print(add())
+    print(x)
+    """
     },
     {
-        'title': 'Deep Nesting Disaster',
-        'code': '''
-if True:
+        "title": "Hardcoded HTML Soup",
+        "code": """
+    <html><head><title>Oops<title><body><h1>Hi<body><p>Paragraph<p><div><div>
+    """
+    },
+    {
+        "title": "Variable Naming from Hell",
+        "code": """
+    int l = 1;
+    int I = 2;
+    int i1 = l + I;
+    System.out.println(i1);
+    """
+    },
+    {
+        "title": "CSS Mayhem",
+        "code": """
+    body {
+    color: red blue;
+    margin: auto auto auto auto auto auto auto;
+    position: absolute fixed;
+    z-index: banana;
+    }
+    """
+    },
+    {
+        "title": "Unreachable Everything",
+        "code": """
+    public class Main {
+        public static void main(String[] args) {
+            return;
+            System.out.println("You will never see this.");
+        }
+    }
+    """
+    },
+    {
+        "title": "SQL Injection on Purpose",
+        "code": """
+    user_input = "'; DROP TABLE users; --"
+    query = "SELECT * FROM users WHERE name = '" + user_input + "'"
+    cursor.execute(query)
+    """
+    },
+    {
+        "title": "JavaScript Callback Pyramid",
+        "code": """
+    doSomething(function(a){
+    doSomethingElse(a, function(b){
+        anotherThing(b, function(c){
+        finalThing(c, function(d){
+            console.log(d);
+        });
+        });
+    });
+    });
+    """
+    },
+    {
+        "title": "Deeply Nested Python",
+        "code": """
     if True:
         if True:
             if True:
                 if True:
                     if True:
-                        if True:
-                            print("help")
-        '''
+                        print("why?")
+    """
+    },
+    {
+        "title": "Rust Panic Generator",
+        "code": """
+    fn main() {
+        let v = vec![1, 2, 3];
+        println!("{}", v[99]);
+    }
+    """
+    },
+    {
+        "title": "Shell Script with Useless Cat",
+        "code": """
+    cat file.txt | grep 'search_term' | awk '{print $1}' | cat | cat | cat
+    """
+    },
+    {
+        "title": "PHP Soup of Echoes",
+        "code": """
+    <?php
+    echo 'Hello';
+    echo(' World');
+    echo "!";
+    echo( echo("??") );
+    ?>
+    """
+    },
+    {
+        "title": "Empty Catch Block",
+        "code": """
+    try {
+        throw new Exception("uh oh");
+    } catch (Exception e) {
+        // ignore it forever
+    }
+    """
+    },
+    {
+        "title": "Go Lang Goto Love",
+        "code": """
+    package main
+
+    import "fmt"
+
+    func main() {
+        goto start
+
+    middle:
+        fmt.Println("Middle")
+
+    start:
+        fmt.Println("Start")
+        goto end
+
+    end:
+        fmt.Println("End")
+    }
+    """
+    },
+    {
+        "title": "Bash if That Always Fails",
+        "code": """
+    if [ "yes" = "no" ]; then
+    echo "This will never happen"
+    else
+    echo "This shouldn't happen either"
+    fi
+    """
     }
 ]
