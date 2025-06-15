@@ -159,8 +159,13 @@ def draw_page():
                 debug = False
                 setup_debug = False
                 if not debug or setup_debug:
-                    code_dict = parse_full_github_user(profile)
-                    summary = critique_code_dict(code_dict)
+                    if 'github_profile' not in st.session_state or st.session_state['github_profile'] != profile:
+                        code_dict = parse_full_github_user(profile)
+                        summary = critique_code_dict(code_dict)
+                        st.session_state['github_profile'] = profile
+                        st.session_state['github_profile_summary'] = summary
+                    else:
+                        summary = st.session_state['github_profile_summary']
                     # dict to string conversion for display
                     code_snippet = "\n".join(f"{k}: {v}" for k, v in summary.items())
                     if setup_debug:
@@ -171,7 +176,7 @@ def draw_page():
                     # load the summary again
                     with open("roast_summary.txt", "r") as f:
                         code_snippet = f.read()
-                    return code_snippet
+                return code_snippet
             draw_roast_buttons(code_snippet_fn=code_snippet_fn, key="github profile")
         
 

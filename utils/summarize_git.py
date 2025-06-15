@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 # A default prompt to critique code – customize as needed
 PROMPT_CODE_SNIPPET_TEMPLATE = """
-You are a critical code reviewer. Review the following code and point out only what is wrong, flawed, or could be improved. Be on point but keep it short and concise. Do not include any positive feedback or compliments.
+You are a critical code reviewer. Review the following code/README and point out only what is wrong, flawed, or could be improved. Be on point but keep it short and concise. Do not include any positive feedback or compliments.
 
 Focus on:
 - Poor variable or function names

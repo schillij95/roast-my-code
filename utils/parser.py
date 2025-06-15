@@ -41,7 +41,7 @@ def fetch_repo_contents(owner, repo, path=""):
 # PARSE A REPOSITORY
 # -----------------------------
 def parse_repo(owner, repo, path="", depth=2):
-    repo_dict = {}
+    repo_dict = {'Pinned Repository Name': repo}
     if depth < 0:
         return repo_dict
 
@@ -169,7 +169,7 @@ def fetch_github_profile(username):
 
     profile_data["repos"] = [
         {
-            "name": "Pinned Repository: "+r["name"],
+            "name": "Listed Repository: "+r["name"],
             "description": r["description"],
             "language": r["language"],
             "stargazers_count": r["stargazers_count"],
