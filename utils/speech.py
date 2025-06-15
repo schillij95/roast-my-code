@@ -16,9 +16,7 @@ def text_to_speech(text, data_path='.'):
         audio_file = f'{data_path}/{i}.wav'
         sf.write(audio_file, audio, 24000)
         st.audio(audio_file, format="audio/wav")
-
-def speak_text(text):
-    pass
+        
 
 def stream_text_and_speech_generator(text_generator):
     """
