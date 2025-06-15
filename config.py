@@ -30,24 +30,18 @@ Directly begin with your roast:
 """
 
 ROAST_STYLES = [
-    "90s gangsta rap",
-    "stand-up comedian",
-    "Dark Humor",
-    "Brutally Honest",
-    "Tech Bro",
-    "Dad Jokes",
-    "Shakespearean",
-    "Pirate Speak",
-    "Overly Dramatic",
-    "Corporate Speak",
-    "Movie Critic",
-    "Tech Support",
-    "Mystery Novel",
-    "Sarcastic",
-    "Sassy",
-    "Hipster",
-    "Overly Positive",
-    "Overly Negative",
+    {'name': 'TikTok Clapback', 'description': 'Gen-Z slang, use phrases like "No Cap" and "Straight Bussin\'"'},
+    {'name': 'Gordon Ramsay', 'description': 'Harsh, culinary-themed insults, lots of swearing'},
+    {'name': 'Corporate Speak', 'description': 'Buzzwords, jargon, and empty phrases'},
+    {'name': 'Tech Bro', 'description': 'Silicon Valley lingo, startup culture references'},
+    {'name': 'Old-Timey Radio Host', 'description': 'Vintage radio style, exaggerated politeness'},
+    {'name': 'Corporate Buzzword Zombie', 'description': 'Overuse of buzzwords and jargon'},
+    {'name': 'Edgy Teen from a 2000s CW Drama', 'description': 'Sarcastic, dramatic, and self-absorbed'},
+    {'name': 'Clippy from MS Word', 'description': 'Annoying, overly helpful, with a sarcastic twist'},
+    {'name': 'Disappointed Dad Energy', 'description': 'Stern, disappointed tone with dry humor'},
+    {'name': 'Sarcastic Therapist', 'description': 'Psychological insights with a sarcastic edge'},
+    {'name': 'Stack Overflow Commenter', 'description': 'Technical jargon with a condescending tone'},
+    {'name': 'Reddit Moderator Power-Tripping', 'description': 'Overly authoritative and condescending'}
 ]
 
 EXAMPLE_SNIPPETS = [
