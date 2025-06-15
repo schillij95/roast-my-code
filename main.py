@@ -31,7 +31,7 @@ def response_dialog(generator):
                 response += chunk['response']
                 st.write(response)
 
-def on_click_roast_snippet(code_snippet_fn, roast_style, detailed=False):
+def on_click_roast_snippet(code_snippet_fn, roast_style, detailed=False, type="code snippet"):
     """
     Callback for roast buttons. Generates and displays a code roast.
     """
@@ -39,7 +39,8 @@ def on_click_roast_snippet(code_snippet_fn, roast_style, detailed=False):
     generator = generate_code_roast(
         code_snippet, 
         detailed=detailed, 
-        roast_style=roast_style
+        roast_style=roast_style,
+        type=type
     )
     response_dialog(generator)
 
@@ -104,9 +105,10 @@ def draw_roast_buttons(code_snippet_fn, key):
         kwargs={
             'code_snippet_fn': code_snippet_fn,
             'roast_style': st.session_state['roast_style'],
-            'detailed': False
+            'detailed': False,
+            'type': key
         },
-        key=f"quick_roast_{2*key}"
+        key=f"quick_roast_{key}"
     )
     # Detailed Roast button
     cols[1].button(
@@ -116,9 +118,10 @@ def draw_roast_buttons(code_snippet_fn, key):
         kwargs={
             'code_snippet_fn': code_snippet_fn,
             'roast_style': st.session_state['roast_style'],
-            'detailed': True
+            'detailed': True,
+            'type': key
         },
-        key=f"detailed_roast_{2*key + 1}"
+        key=f"detailed_roast_{key}"
     )
 
 def draw_page():
@@ -136,20 +139,31 @@ def draw_page():
             height=300, 
             placeholder="Paste your code snippet here..."
         )   
-        draw_roast_buttons(code_snippet_fn=lambda: code_snippet, key=0)     
+        draw_roast_buttons(code_snippet_fn=lambda: code_snippet, key="code snippet")     
     with tabs[1]:
         st.write("Enter the URL of your GitHub repository containing the code you want to roast.")
-        profile = st.text_input("Enter the github profile name")
+        profile = st.text_input("Enter the github profile name", placeholder="schillij95")
 
         if profile:
             st.write(f"Fetching code from GitHub profile: {profile}")
             def code_snippet_fn():
-                code_dict = parse_full_github_user(profile)
-                summary = critique_code_dict(code_dict)
-                # dict to string conversion for display
-                code_snippet = "\n".join(f"{k}: {v}" for k, v in summary.items())
-                return code_snippet
-            draw_roast_buttons(code_snippet_fn=code_snippet_fn, key=1)
+                debug = False
+                setup_debug = False
+                if not debug or setup_debug:
+                    code_dict = parse_full_github_user(profile)
+                    summary = critique_code_dict(code_dict)
+                    # dict to string conversion for display
+                    code_snippet = "\n".join(f"{k}: {v}" for k, v in summary.items())
+                    if setup_debug:
+                        # save to txt
+                        with open("roast_summary.txt", "w") as f:
+                            f.write(code_snippet)
+                else:
+                    # load the summary again
+                    with open("roast_summary.txt", "r") as f:
+                        code_snippet = f.read()
+                    return code_snippet
+            draw_roast_buttons(code_snippet_fn=code_snippet_fn, key="github profile")
         
 
 

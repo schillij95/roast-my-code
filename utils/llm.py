@@ -1,6 +1,6 @@
 import ollama
 import streamlit as st
-from config import PROMPT_CODE_SNIPPET_TEMPLATE
+from config import PROMPT_CODE_SNIPPET_TEMPLATE, PROMPT_GITHUB_PROFILE_TEMPLATE
 
 def get_model_names():
     """
@@ -32,7 +32,7 @@ def get_llm_response(prompt: str, stream=True):
     else:
         return result['response']  # full string
 
-def generate_code_roast(code: str, roast_style: str, detailed: bool = False):
+def generate_code_roast(code: str, roast_style: str, detailed: bool = False, type: str = "code snippet"):
     """
     Generate a code roast using the LLM based on the provided code and roast style.
 
@@ -45,7 +45,17 @@ def generate_code_roast(code: str, roast_style: str, detailed: bool = False):
         generator: A generator yielding the roast response from the LLM.
     """
     # Optionally add detail to the prompt if requested
-    prompt = PROMPT_CODE_SNIPPET_TEMPLATE.format(
+    match type:
+        case "code snippet":
+            print("Roasting code snippet...")
+            prompt_template = PROMPT_CODE_SNIPPET_TEMPLATE
+        case "github profile":
+            print("Roasting GitHub profile...")
+            prompt_template = PROMPT_GITHUB_PROFILE_TEMPLATE
+        case _:
+            print(f"Unknown type: {type}")
+            raise ValueError(f"Unknown type: {type}")
+    prompt = prompt_template.format(
         code=code,
         roast_style=roast_style + (" (detailed)" if detailed else "")
     )
