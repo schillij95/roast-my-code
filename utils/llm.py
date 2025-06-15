@@ -11,7 +11,7 @@ def get_model_names():
     """
     return [model.model for model in ollama.list().get('models', [])]
 
-def get_llm_response(prompt: str):
+def get_llm_response(prompt: str, stream=True):
     """
     Generate a response from the selected LLM model using a given prompt.
 
@@ -25,7 +25,12 @@ def get_llm_response(prompt: str):
     if not model:
         raise ValueError("No model selected in session state.")
     # Stream responses for efficient UI updates
-    return ollama.generate(model=model, prompt=prompt, stream=True)
+    result = ollama.generate(model=model, prompt=prompt, stream=stream)
+
+    if stream:
+        return result  # generator
+    else:
+        return result['response']  # full string
 
 def generate_code_roast(code: str, roast_style: str, detailed: bool = False):
     """

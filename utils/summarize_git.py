@@ -1,6 +1,7 @@
 import ollama
 from typing import Dict, Any
 from .llm import get_llm_response
+from tqdm import tqdm
 
 # A default prompt to critique code – customize as needed
 PROMPT_CODE_SNIPPET_TEMPLATE = """
@@ -28,20 +29,32 @@ def critique_code_dict(code_dict: Dict[str, Any]) -> Dict[str, Any]:
     """
     result = {}
 
-    for key, value in code_dict.items():
+    items = code_dict.items()
+    # random shuffle the items to ensure different order each time
+    items = list(items)  # Convert to list for tqdm compatibility
+    from random import shuffle
+    shuffle(items)
+    # only use first 10 items for performance
+    items = items[:10]
+
+    for key, value in tqdm(items, desc="Critiquing code", unit="file"):
+        if key == "profile_info":
+            # cast profile info to string
+            result[key] = str(value)
         if isinstance(value, str):
+            max_length = min(1000, len(value))  # Limit to first 10,000 characters for performance
+            code = value[:max_length]
             # This is a file
-            prompt = PROMPT_CODE_SNIPPET_TEMPLATE.format(code=value)
+            prompt = PROMPT_CODE_SNIPPET_TEMPLATE.format(code=code)
             try:
-                summary = get_llm_response(prompt)
+                summary = get_llm_response(prompt, stream=False)
                 result[key] = summary
             except Exception as e:
-                print(f"LLM error on file {key}: {e}")
                 result[key] = f"Error during LLM evaluation: {e}"
         elif isinstance(value, dict):
             # This is a folder
             result[key] = critique_code_dict(value)
         else:
-            result[key] = "Unknown format"
+            result[key] = str(value)  # Handle other types gracefully
 
     return result

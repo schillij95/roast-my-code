@@ -1,5 +1,7 @@
 import streamlit as st
 from utils.llm import get_model_names, generate_code_roast
+from utils.parser import parse_full_github_user
+from utils.summarize_git import critique_code_dict
 from config import ROAST_STYLES, EXAMPLE_SNIPPETS
 
 def init():
@@ -23,10 +25,11 @@ def response_dialog(generator):
             response += chunk['response']
             st.write(response)
 
-def on_click_roast_snippet(code_snippet, roast_style, detailed=False):
+def on_click_roast_snippet(code_snippet_fn, roast_style, detailed=False):
     """
     Callback for roast buttons. Generates and displays a code roast.
     """
+    code_snippet = code_snippet_fn()
     generator = generate_code_roast(
         code_snippet, 
         detailed=detailed, 
@@ -81,6 +84,33 @@ def draw_example_snippets():
     )
     return selected_snippet_code
 
+def draw_roast_buttons(code_snippet_fn, key):
+    cols = st.columns(2)
+    # Quick Roast button
+    cols[0].button(
+        "Quick Roast", 
+        use_container_width=True, 
+        on_click=on_click_roast_snippet, 
+        kwargs={
+            'code_snippet_fn': code_snippet_fn,
+            'roast_style': st.session_state['roast_style'],
+            'detailed': False
+        },
+        key=f"quick_roast_{2*key}"
+    )
+    # Detailed Roast button
+    cols[1].button(
+        "Detailed Roast", 
+        use_container_width=True, 
+        on_click=on_click_roast_snippet, 
+        kwargs={
+            'code_snippet_fn': code_snippet_fn,
+            'roast_style': st.session_state['roast_style'],
+            'detailed': True
+        },
+        key=f"detailed_roast_{2*key + 1}"
+    )
+
 def draw_page():
     """
     Draw the main page layout with code input and roast buttons.
@@ -95,35 +125,23 @@ def draw_page():
             value=selected_snippet_code, 
             height=300, 
             placeholder="Paste your code snippet here..."
-        )
-        cols = st.columns(2)
-        # Quick Roast button
-        cols[0].button(
-            "Quick Roast", 
-            use_container_width=True, 
-            on_click=on_click_roast_snippet, 
-            kwargs={
-                'code_snippet': code_snippet,
-                'roast_style': st.session_state['roast_style'],
-                'detailed': False
-            },
-            disabled=not code_snippet.strip()
-        )
-        # Detailed Roast button
-        cols[1].button(
-            "Detailed Roast", 
-            use_container_width=True, 
-            on_click=on_click_roast_snippet, 
-            kwargs={
-                'code_snippet': code_snippet,
-                'roast_style': st.session_state['roast_style'],
-                'detailed': True
-            },
-            disabled=not code_snippet.strip()
-        )
+        )   
+        draw_roast_buttons(code_snippet_fn=lambda: code_snippet, key=0)     
     with tabs[1]:
         st.write("Enter the URL of your GitHub repository containing the code you want to roast.")
-        st.text_input("Enter the github repository URL")
+        profile = st.text_input("Enter the github profile name")
+
+        if profile:
+            st.write(f"Fetching code from GitHub profile: {profile}")
+            def code_snippet_fn():
+                code_dict = parse_full_github_user(profile)
+                summary = critique_code_dict(code_dict)
+                # dict to string conversion for display
+                code_snippet = "\n".join(f"{k}: {v}" for k, v in summary.items())
+                return code_snippet
+            draw_roast_buttons(code_snippet_fn=code_snippet_fn, key=1)
+        
+
 
 def main():
     """
