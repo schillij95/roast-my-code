@@ -2,23 +2,22 @@
 from kokoro import KPipeline
 import soundfile as sf
 import streamlit as st
-from config import VOICE
 from time import sleep, time
 
 pipeline = KPipeline(lang_code='a')
 
-def text_to_speech(text, voice=VOICE, data_path='.'):
+def text_to_speech(text, data_path='.'):
     """
     Convert text to speech using the specified voice and save audio files.
     """
-    generator = pipeline(text, voice=voice)
+    generator = pipeline(text, voice=st.session_state['voice'])
     for i, (gs, ps, audio) in enumerate(generator):
         audio_file = f'{data_path}/{i}.wav'
         sf.write(audio_file, audio, 24000)
         st.audio(audio_file, format="audio/wav")
 
 
-def stream_text_and_speech_generator(text_generator, voice=VOICE, data_path='.'):
+def stream_text_and_speech_generator(text_generator,  data_path='.'):
     """
     Stream text and speech generation, updating the UI with the generated text
     and playing audio as it becomes available.
@@ -36,7 +35,7 @@ def stream_text_and_speech_generator(text_generator, voice=VOICE, data_path='.')
             st.write(full_text)
 
             if token in ('.', '!', '?', '\n') and count > 10:
-                generator = pipeline(current_text, voice=voice)
+                generator = pipeline(current_text, voice=st.session_state['voice'])
                 for i, (_, _, audio) in enumerate(generator):
                     audio_path = f'{data_path}/{i}.wav'
                     sf.write(audio_path, audio, 24000)

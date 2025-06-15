@@ -2,7 +2,7 @@ import streamlit as st
 from utils.llm import get_model_names, generate_code_roast
 from utils.parser import parse_full_github_user
 from utils.summarize_git import critique_code_dict
-from config import ROAST_STYLES, EXAMPLE_SNIPPETS
+from config import ROAST_STYLES, EXAMPLE_SNIPPETS, VOICES, DEFAULT_VOICE
 
 def init():
     """
@@ -15,6 +15,8 @@ def init():
         st.session_state['model'] = st.session_state['available_models'][0]
     if 'voice_output' not in st.session_state:
         st.session_state['voice_output'] = False
+    if 'voice' not in st.session_state:
+        st.session_state['voice'] = DEFAULT_VOICE
 
 @st.dialog("🔥 Roast", width="large")
 def response_dialog(generator):
@@ -76,7 +78,14 @@ def draw_sidebar():
     st.session_state['voice_output'] = st.sidebar.toggle(
         "Enable Voice Output",
         value=st.session_state['voice_output'],
-        help="Enable this to hear the roast read aloud.")
+        help="Enable this to hear the roast read aloud."
+    )
+    if st.session_state['voice_output']:
+        st.session_state['voice'] = st.sidebar.selectbox(
+            "Select Voice",
+            options=VOICES,
+            index=VOICES.index(DEFAULT_VOICE) if DEFAULT_VOICE in VOICES else 0
+        )
 
 def draw_example_snippets():
     """
