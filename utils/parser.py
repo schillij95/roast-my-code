@@ -169,7 +169,7 @@ def fetch_github_profile(username):
 
     profile_data["repos"] = [
         {
-            "name": r["name"],
+            "name": "Pinned Repository: "+r["name"],
             "description": r["description"],
             "language": r["language"],
             "stargazers_count": r["stargazers_count"],
