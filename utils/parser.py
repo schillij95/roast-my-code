@@ -11,7 +11,7 @@ GITHUB_API_URL = "https://api.github.com"
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 if not GITHUB_TOKEN:
-    raise ValueError("GitHub token not found. Set the GITHUB_TOKEN environment variable.")
+    print("GitHub token not found. Set the GITHUB_TOKEN environment variable.")
 
 HEADERS = {
     "Authorization": f"token {GITHUB_TOKEN}",

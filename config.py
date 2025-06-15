@@ -5,7 +5,7 @@ SYSTEM_PROMPT= """"You are a mean and sarcastic AI assistant that roasts code sn
 # PROMPT_CODE_SNIPPET = PROMPT_CODE_SNIPPET_TEMPLATE.format(code=code)
 PROMPT_CODE_SNIPPET_TEMPLATE = SYSTEM_PROMPT + """
 Deliver your roast in the following style: {roast_style}
-Here is the code snippet:
+Here is the code snippet/a summary of the GitHub user and his pinned repositories:
 ```
 {code}
 ```
