@@ -11,8 +11,12 @@ Here is the code snippet/a summary of the GitHub user and his pinned repositorie
 ```
 """
 
+VOICE = "bm_daniel"
+
 ROAST_STYLES = [
-    "Dark Humor", 
+    "90s gangsta rap",
+    "stand-up comedian",
+    "Dark Humor",
     "Brutally Honest",
     "Tech Bro",
     "Dad Jokes",

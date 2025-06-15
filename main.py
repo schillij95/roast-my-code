@@ -13,17 +13,23 @@ def init():
     if 'model' not in st.session_state:
         # Default to the first available model
         st.session_state['model'] = st.session_state['available_models'][0]
+    if 'voice_output' not in st.session_state:
+        st.session_state['voice_output'] = False
 
 @st.dialog("🔥 Roast", width="large")
 def response_dialog(generator):
     """
     Display the streaming response from the code roast generator in a dialog.
     """
-    response = ""
-    with st.empty():
-        for chunk in generator:
-            response += chunk['response']
-            st.write(response)
+    if st.session_state['voice_output']:
+        from utils.speech import stream_text_and_speech_generator
+        stream_text_and_speech_generator(generator)
+    else:
+        response = ""
+        with st.empty():
+            for chunk in generator:
+                response += chunk['response']
+                st.write(response)
 
 def on_click_roast_snippet(code_snippet_fn, roast_style, detailed=False):
     """
@@ -67,6 +73,10 @@ def draw_sidebar():
     """
     model_selection(container=st.sidebar)
     st.session_state['roast_style'] = roast_style_selection(container=st.sidebar)
+    st.session_state['voice_output'] = st.sidebar.toggle(
+        "Enable Voice Output",
+        value=st.session_state['voice_output'],
+        help="Enable this to hear the roast read aloud.")
 
 def draw_example_snippets():
     """
