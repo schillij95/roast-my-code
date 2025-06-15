@@ -59,6 +59,4 @@ def generate_code_roast(code: str, roast_style: str, detailed: bool = False, typ
         code=code,
         roast_style=roast_style + (" (detailed)" if detailed else "")
     )
-    print(f"Prompt: {prompt}")
-    print(f"Roast Style: {roast_style}")
     return get_llm_response(prompt)

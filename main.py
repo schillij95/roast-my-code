@@ -151,7 +151,7 @@ def draw_page():
             draw_roast_buttons(code_snippet_fn=code_snippet_fn, key="github profile")
         
 
-
+        
 def main():
     """
     Main entry point for the Streamlit app.

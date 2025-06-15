@@ -11,15 +11,18 @@ Here is the code snippet:
 ```
 """
 
-PROMPT_GITHUB_PROFILE_TEMPLATE = SYSTEM_PROMPT.format(code_type="GitHub profiles") + """
-Deliver your roast in the following style: {roast_style}
-To make it easier for you to roast the Profile, we already parsed some information for you and run a sumarizing critique on the files of the pinned repositories. You can also use the stars, followers, and other information to roast the profile.
-Here is the GitHub profile and the result of the preliminary summary. 
+PROMPT_GITHUB_PROFILE_TEMPLATE = """
 ```
 {code}
 ```
+To make it easier for you to roast the Profile, we already parsed some information for you and run a sumarizing critique on the files of the pinned repositories. You can also use the stars, followers, and other information to roast the profile.
+Above is the GitHub profile and the result of the preliminary summary. 
+Deliver your roast in the following style: {roast_style}
+Your answer should not be a novel. Dont go into detail on too many files, pick the worst offenders and focus on them if any specific files at all.
 
-Use this information to completely destroy the profile. Be concise and use at most 10 sentences. BURN THEM TO THE GROUND!!!
+Use this information to completely destroy the profile.
+""" + SYSTEM_PROMPT.format(code_type="GitHub profiles") + """
+Directly begin with your roast:
 """
 
 ROAST_STYLES = [
