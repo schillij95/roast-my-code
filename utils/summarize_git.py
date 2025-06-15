@@ -35,13 +35,17 @@ def critique_code_dict(code_dict: Dict[str, Any]) -> Dict[str, Any]:
     from random import shuffle
     shuffle(items)
     # only use first 10 items for performance
-    items = items[:10]
-
+    count = 0
     for key, value in tqdm(items, desc="Critiquing code", unit="file"):
         if key == "profile_info":
             # cast profile info to string
             result[key] = str(value)
         if isinstance(value, str):
+            if count >= 10:
+                # Limit to first 10 files for performance
+                result[key] = "Critique skipped for performance reasons."
+                continue
+            count += 1
             max_length = min(1000, len(value))  # Limit to first 10,000 characters for performance
             code = value[:max_length]
             # This is a file
