@@ -137,21 +137,26 @@ def draw_page():
         if profile:
             st.write(f"Fetching code from GitHub profile: {profile}")
             def code_snippet_fn():
-                # code_dict = parse_full_github_user(profile)
-                # summary = critique_code_dict(code_dict)
-                # # dict to string conversion for display
-                # code_snippet = "\n".join(f"{k}: {v}" for k, v in summary.items())
-                # # save to txt
-                # with open("roast_summary.txt", "w") as f:
-                #     f.write(code_snippet)
-                # load the summary again
-                with open("roast_summary.txt", "r") as f:
-                    code_snippet = f.read()
-                return code_snippet
+                debug = False
+                setup_debug = False
+                if not debug or setup_debug:
+                    code_dict = parse_full_github_user(profile)
+                    summary = critique_code_dict(code_dict)
+                    # dict to string conversion for display
+                    code_snippet = "\n".join(f"{k}: {v}" for k, v in summary.items())
+                    if setup_debug:
+                        # save to txt
+                        with open("roast_summary.txt", "w") as f:
+                            f.write(code_snippet)
+                else:
+                    # load the summary again
+                    with open("roast_summary.txt", "r") as f:
+                        code_snippet = f.read()
+                    return code_snippet
             draw_roast_buttons(code_snippet_fn=code_snippet_fn, key="github profile")
         
 
-        
+
 def main():
     """
     Main entry point for the Streamlit app.
