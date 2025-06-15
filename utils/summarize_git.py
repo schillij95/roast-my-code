@@ -1,6 +1,6 @@
 import ollama
 from typing import Dict, Any
-from llm import get_llm_response
+from .llm import get_llm_response
 
 # A default prompt to critique code – customize as needed
 PROMPT_CODE_SNIPPET_TEMPLATE = """

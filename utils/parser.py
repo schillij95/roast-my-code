@@ -198,7 +198,7 @@ def fetch_github_profile(username):
 # -----------------------------
 # PARSE FULL USER PROFILE + CODE
 # -----------------------------
-def parse_full_github_user(username, depth=2):
+def parse_full_github_user(username, depth=1):
     print(f"Fetching profile for: {username}")
     profile_info = fetch_github_profile(username)
 
