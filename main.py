@@ -8,14 +8,18 @@ def init():
     if 'model' not in st.session_state:
         st.session_state['model'] = st.session_state['available_models']
 
-def on_click_roast_snippet(container, code_snippet, roast_style, detailed=False):
-    container.subheader("🔥 Roast", divider=True)
-    generator = generate_code_roast(code_snippet, detailed=detailed, roast_style=roast_style)
+@st.dialog("🔥 Roast", width="large")
+def response_dialog(generator):
     response = ""
-    with container.empty():
+    with st.empty():
         for chunk in generator:
             response += chunk['response']
             st.write(response)
+
+def on_click_roast_snippet(code_snippet, roast_style, detailed=False):
+    generator = generate_code_roast(code_snippet, detailed=detailed, roast_style=roast_style)
+    response_dialog(generator)
+    
 
 def model_selection(container):
     models = st.session_state['available_models']
@@ -48,13 +52,11 @@ def draw_page():
         selected_snippet_code = draw_example_snippets()
         code_snippet = st.text_area("Enter your Code", value=selected_snippet_code, height=300, placeholder="Paste your code snippet here...")
         cols = st.columns(2)
-        container = st.container()
         cols[0].button(
             "Quick Roast", 
             use_container_width=True, 
             on_click=on_click_roast_snippet, 
             kwargs={
-                'container': container,
                 'code_snippet': code_snippet,
                 'roast_style': st.session_state['roast_style'],
                 'detailed': False
@@ -66,7 +68,6 @@ def draw_page():
             use_container_width=True, 
             on_click=on_click_roast_snippet, 
             kwargs={
-                'container': container,
                 'code_snippet': code_snippet,
                 'roast_style': st.session_state['roast_style'],
                 'detailed': True
