@@ -11,6 +11,10 @@ Here is the code snippet:
 ```
 """
 
+
+DEFAULT_VOICE = 'bm_daniel'
+VOICES = ['bm_daniel', 'af_alloy', 'af_aoede', 'af_bella', 'af_heart', 'af_jessica', 'af_kore', 'af_nicole', 'af_nova', 'af_river', 'af_sarah', 'af_sky', 'am_adam', 'am_echo', 'am_eric', 'am_fenrir', 'am_liam', 'am_michael', 'am_onyx', 'am_puck', 'bf_alice', 'bf_emma', 'bf_isabella', 'bf_lily', 'bm_fable', 'bm_george', 'bm_lewis']
+
 PROMPT_GITHUB_PROFILE_TEMPLATE = """
 ```
 {code}
@@ -24,8 +28,6 @@ Use this information to completely destroy the profile.
 """ + SYSTEM_PROMPT.format(code_type="GitHub profiles") + """
 Directly begin with your roast:
 """
-
-VOICE = "bm_daniel"
 
 ROAST_STYLES = [
     "90s gangsta rap",
