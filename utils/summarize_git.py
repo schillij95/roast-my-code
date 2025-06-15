@@ -1,6 +1,7 @@
 import ollama
 from typing import Dict, Any
 from .llm import get_llm_response
+from .parser import is_text_file
 from tqdm import tqdm
 
 # A default prompt to critique code – customize as needed
@@ -37,10 +38,7 @@ def critique_code_dict(code_dict: Dict[str, Any]) -> Dict[str, Any]:
     # only use first 10 items for performance
     count = 0
     for key, value in tqdm(items, desc="Critiquing code", unit="file"):
-        if key == "profile_info":
-            # cast profile info to string
-            result[key] = str(value)
-        if isinstance(value, str):
+        if isinstance(value, str) and is_text_file(key):
             if count >= 10:
                 # Limit to first 10 files for performance
                 result[key] = "Critique skipped for performance reasons."
