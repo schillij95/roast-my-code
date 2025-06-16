@@ -1,6 +1,6 @@
 import streamlit as st
 from utils.llm import get_model_names, generate_code_roast
-from utils.parser import parse_full_github_user
+from utils.parser import parse_full_github_user, parse_repo
 from utils.summarize_git import critique_code_dict
 from config import ROAST_STYLES, EXAMPLE_SNIPPETS, VOICES, DEFAULT_VOICE
 
@@ -159,36 +159,31 @@ def draw_page():
     with tabs[1]:
         st.write("Enter the URL of your GitHub repository containing the code you want to roast.")
         profile = st.text_input("Enter the github profile name", placeholder="schillij95")
-
+        repository = st.text_input("Enter the github repository name (optional)", placeholder="roast-my-code")
+        print(f"Profile: {profile}, Repository: {repository}")
         if profile:
             st.write(f"Fetching code from GitHub profile: {profile}")
             def code_snippet_fn(detailed=False):
-                debug = False
-                setup_debug = False
-                if not debug or setup_debug:
-                    def helper():
+                def helper():
+                    if not repository:
                         code_dict = parse_full_github_user(profile, depth=0 if not detailed else 1)
-                        summary = critique_code_dict(code_dict)
-                        st.session_state['github_profile'] = profile
-                        st.session_state['github_profile_summary'] = summary
-                        st.session_state['detailed'] = detailed
-                        return summary
-                    if 'github_profile' not in st.session_state or st.session_state['github_profile'] != profile:
-                        summary = helper()
-                    elif detailed and ('detailed' not in st.session_state or not st.session_state['detailed']):
-                        summary = helper()
                     else:
-                        summary = st.session_state['github_profile_summary']
-                    # dict to string conversion for display
-                    code_snippet = "\n".join(f"{k}: {v}" for k, v in summary.items()) + "\nSummary for the user {profile}:".format(profile=profile)
-                    if setup_debug:
-                        # save to txt
-                        with open("roast_summary.txt", "w") as f:
-                            f.write(code_snippet)
+                        code_dict = parse_repo(profile, repository, depth=1 if not detailed else 2)
+                    summary = critique_code_dict(code_dict)
+                    st.session_state['github_profile'] = profile
+                    st.session_state['github_profile_summary'] = summary
+                    st.session_state['detailed'] = detailed
+                    st.session_state['repository'] = repository
+                    return summary
+                if ('github_profile' not in st.session_state or st.session_state['github_profile'] != profile) \
+                        or ('github_profile_summary' not in st.session_state or not st.session_state['github_profile_summary']) \
+                        or (detailed and ('detailed' not in st.session_state or not st.session_state['detailed'])) \
+                        or ('repository' not in st.session_state or st.session_state['repository'] != repository):
+                    summary = helper()
                 else:
-                    # load the summary again
-                    with open("roast_summary.txt", "r") as f:
-                        code_snippet = f.read()
+                    summary = st.session_state['github_profile_summary']
+                # dict to string conversion for display
+                code_snippet = "\n".join(f"{k}: {v}" for k, v in summary.items()) + "\nSummary for the user {profile}:".format(profile=profile)
                 return code_snippet
             draw_roast_buttons(code_snippet_fn=code_snippet_fn, key="github profile")
         
