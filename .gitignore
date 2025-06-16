@@ -5,3 +5,4 @@ roast_summary.txt
 *.pyc
 *.pyo
 =*
+*.wav
