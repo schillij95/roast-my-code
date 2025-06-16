@@ -22,7 +22,7 @@ PROMPT_GITHUB_PROFILE_TEMPLATE = """
 To make it easier for you to roast the Profile, we already parsed some information for you and run a sumarizing critique on the files of the pinned repositories. You can also use the stars, followers, and other information to roast the profile.
 Above is the GitHub profile and the result of the preliminary summary. 
 Deliver your roast in the following style: {roast_style}
-Your answer should not be a novel. Dont go into detail on too many files, pick the worst offenders and focus on them if any specific files at all. Disregard None fields. BURN THE REPO TO THE GROUND!!!
+Your answer should not be a novel. Dont go into detail on too many files, pick the worst offenders and focus on them if any specific files at all. Disregard None fields. Address the profile by their name and BURN THEM TO THE GROUND!!!
 
 Use this information to completely destroy the profile.
 """ + SYSTEM_PROMPT.format(code_type="GitHub profiles") + """

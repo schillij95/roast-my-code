@@ -37,7 +37,7 @@ def on_click_roast_snippet(code_snippet_fn, roast_style, detailed=False, type="c
     """
     Callback for roast buttons. Generates and displays a code roast.
     """
-    code_snippet = code_snippet_fn()
+    code_snippet = code_snippet_fn(detailed)
     generator = generate_code_roast(
         code_snippet, 
         detailed=detailed, 
@@ -155,26 +155,32 @@ def draw_page():
             height=300, 
             placeholder="Paste your code snippet here..."
         )   
-        draw_roast_buttons(code_snippet_fn=lambda: code_snippet, key="code snippet")     
+        draw_roast_buttons(code_snippet_fn=lambda _: code_snippet, key="code snippet")     
     with tabs[1]:
         st.write("Enter the URL of your GitHub repository containing the code you want to roast.")
         profile = st.text_input("Enter the github profile name", placeholder="schillij95")
 
         if profile:
             st.write(f"Fetching code from GitHub profile: {profile}")
-            def code_snippet_fn():
+            def code_snippet_fn(detailed=False):
                 debug = False
                 setup_debug = False
                 if not debug or setup_debug:
-                    if 'github_profile' not in st.session_state or st.session_state['github_profile'] != profile:
-                        code_dict = parse_full_github_user(profile)
+                    def helper():
+                        code_dict = parse_full_github_user(profile, depth=0 if not detailed else 1)
                         summary = critique_code_dict(code_dict)
                         st.session_state['github_profile'] = profile
                         st.session_state['github_profile_summary'] = summary
+                        st.session_state['detailed'] = detailed
+                        return summary
+                    if 'github_profile' not in st.session_state or st.session_state['github_profile'] != profile:
+                        summary = helper()
+                    elif detailed and ('detailed' not in st.session_state or not st.session_state['detailed']):
+                        summary = helper()
                     else:
                         summary = st.session_state['github_profile_summary']
                     # dict to string conversion for display
-                    code_snippet = "\n".join(f"{k}: {v}" for k, v in summary.items())
+                    code_snippet = "\n".join(f"{k}: {v}" for k, v in summary.items()) + "\nSummary for the user {profile}:".format(profile=profile)
                     if setup_debug:
                         # save to txt
                         with open("roast_summary.txt", "w") as f:
