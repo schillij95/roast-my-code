@@ -160,7 +160,6 @@ def draw_page():
         st.write("Enter the URL of your GitHub repository containing the code you want to roast.")
         profile = st.text_input("Enter the github profile name", placeholder="schillij95")
         repository = st.text_input("Enter the github repository name (optional)", placeholder="roast-my-code")
-        print(f"Profile: {profile}, Repository: {repository}")
         if profile:
             st.write(f"Fetching code from GitHub profile: {profile}")
             def code_snippet_fn(detailed=False):
