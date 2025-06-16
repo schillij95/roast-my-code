@@ -6,7 +6,7 @@ Install ollama. See the [ollama installation guide](https://ollama.com/docs/inst
 
 To install the dependencies, run:
 ```bash
-conda env create -n roaster python=3.12
+conda create -n roaster python=3.12
 ```
 Then activate the environment:
 ```bash
@@ -15,6 +15,10 @@ conda activate roaster
 Install the requirements:
 ```bash
 pip install -r requirements.txt
+```
+We are using Ollama to serve local LLMs:
+```bash
+sudo snap install ollama
 ```
 
 If you want to use the speech output feature, you need to install `espeak-ng`. You can do this by running:
@@ -30,7 +34,7 @@ export GITHUB_TOKEN=your_token_here
 ## Usage
 Pull your favourite LLM:
 ```bash
-ollama pull gemma3:4b
+ollama pull mistral:latest
 ```
 
 To run the application, use:

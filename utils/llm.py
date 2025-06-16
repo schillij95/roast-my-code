@@ -57,6 +57,6 @@ def generate_code_roast(code: str, roast_style: str, detailed: bool = False, typ
             raise ValueError(f"Unknown type: {type}")
     prompt = prompt_template.format(
         code=code,
-        roast_style=roast_style + (" (detailed)" if detailed else "")
+        roast_style=roast_style + (" (mention specific files)" if detailed else " (use at most 3 sentences)"),
     )
     return get_llm_response(prompt)

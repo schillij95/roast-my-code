@@ -41,7 +41,7 @@ def fetch_repo_contents(owner, repo, path=""):
 # PARSE A REPOSITORY
 # -----------------------------
 def parse_repo(owner, repo, path="", depth=2):
-    repo_dict = {'Pinned Repository Name': repo}
+    repo_dict = {}
     if depth < 0:
         return repo_dict
 
@@ -119,11 +119,53 @@ def parse_user_pinned_repos(username, depth=2):
 
     if not pinned:
         print(f"No pinned repos found for {username}")
-        return parsed_results
+        return parsed_results, pinned
 
     for owner, repo in pinned:
         print(f"\nParsing pinned repo: {owner}/{repo}")
-        parsed_results[repo] = parse_repo(owner, repo, depth=depth)
+        parsed_results["pinned repository " + repo] = parse_repo(owner, repo, depth=depth)
+
+    return parsed_results, pinned
+
+# -----------------------------
+# PARSE Most ACTIVE REPOS
+# -----------------------------
+def parse_most_active_repos(username, previously_parsed, depth=2):
+    print(f"Fetching most active repos for {username}...")
+    # Gather all public repos
+    repos = []
+    page = 1
+    while True:
+        url = f"{GITHUB_API_URL}/users/{username}/repos?per_page=100&page={page}"
+        response = requests.get(url, headers=HEADERS)
+        response.raise_for_status()
+        page_data = response.json()
+        if not page_data:
+            break
+        repos.extend(page_data)
+        page += 1
+
+    # Sort by stars and recent update
+    sorted_stars = sorted(repos, key=lambda r: r.get('stargazers_count', 0), reverse=True)
+    sorted_recent = sorted(repos, key=lambda r: r.get('updated_at', ''), reverse=True)
+
+    # Combine top 2 of each, excluding already parsed
+    combined = []
+    seen = set()
+    for repo in sorted_stars[:2] + sorted_recent[:2]:
+        key = (repo['owner']['login'], repo['name'])
+        if key in previously_parsed or key in seen:
+            continue
+        seen.add(key)
+        combined.append(repo)
+
+    # Parse each selected repo
+    parsed_results = {}
+    for repo in combined:
+        owner = repo['owner']['login']
+        name = repo['name']
+        print(f"\nParsing most active repo: {owner}/{name}")
+        parsed_results[f"other relevant user's repository {name}"] = parse_repo(owner, name, depth=depth)
 
     return parsed_results
 
@@ -169,7 +211,7 @@ def fetch_github_profile(username):
 
     profile_data["repos"] = [
         {
-            "name": "Listed Repository: "+r["name"],
+            "name of listed Repository": r["name"],
             "description": r["description"],
             "language": r["language"],
             "stargazers_count": r["stargazers_count"],
@@ -203,11 +245,13 @@ def parse_full_github_user(username, depth=1):
     profile_info = fetch_github_profile(username)
 
     print(f"\nFetching and parsing pinned repos...")
-    pinned_repos_data = parse_user_pinned_repos(username, depth=depth)
+    pinned_repos_data, pinned_repositories = parse_user_pinned_repos(username, depth=depth)
+    relevant_repos_data = parse_most_active_repos(username, pinned_repositories, depth=depth)
 
     return {
         "profile_info": profile_info,
-        "pinned_repos_code": pinned_repos_data
+        "pinned_repos_code": pinned_repos_data,
+        "relevant_repos_code": relevant_repos_data,
     }
 
 # -----------------------------

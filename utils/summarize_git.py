@@ -39,11 +39,12 @@ def critique_code_dict(code_dict: Dict[str, Any]) -> Dict[str, Any]:
     count = 0
     for key, value in tqdm(items, desc="Critiquing code", unit="file"):
         if isinstance(value, str) and is_text_file(key):
-            if count >= 10:
-                # Limit to first 10 files for performance
-                result[key] = "Critique skipped for performance reasons."
-                continue
-            count += 1
+            if not value.endswith('.md'):
+                if count >= 3:
+                    # Limit to first 10 files for performance
+                    result[key] = "Critique skipped for performance reasons."
+                    continue
+                count += 1
             max_length = min(1000, len(value))  # Limit to first 10,000 characters for performance
             code = value[:max_length]
             # This is a file
