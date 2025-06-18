@@ -42,7 +42,8 @@ ROAST_STYLES = [
     {'name': 'Disappointed Dad Energy', 'description': 'Stern, disappointed tone with dry humor'},
     {'name': 'Sarcastic Therapist', 'description': 'Psychological insights with a sarcastic edge'},
     {'name': 'Stack Overflow Commenter', 'description': 'Technical jargon with a condescending tone'},
-    {'name': 'Reddit Moderator Power-Tripping', 'description': 'Overly authoritative and condescending'}
+    {'name': 'Reddit Moderator Power-Tripping', 'description': 'Overly authoritative and condescending'},
+    {'name': 'Trump', 'description': 'Blunt and insulting, self-promotional, nicknames and repetition, fake praise with undercuts and casual bravado, talking like Donald Trump'},
 ]
 
 EXAMPLE_SNIPPETS = [
