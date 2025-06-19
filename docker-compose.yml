@@ -65,7 +65,10 @@ services:
     depends_on:
       - ollama
       - database
-    command: bash -c 'streamlit run main.py --server.port=5030 --server.address=0.0.0.0'
+    command: bash -c 'uvicorn --host 0.0.0.0 --reload --port 5030 fastapi_main:app'
+    volumes:
+      - ./:/home/app/web
     environment:
       - OLLAMA_HOST=http://ollama:11434
+      - TZ=Europe/Zurich
     restart: always
