@@ -23,7 +23,22 @@
     input[type="checkbox"] { margin-right: 0.5rem; }
     button { background: var(--accent); color: var(--bg); border: none; cursor: pointer; font-size: 1rem; }
     button:hover { opacity: 0.9; }
-    #roastResult { white-space: pre-wrap; background: var(--form-bg); padding: 1rem; border: 1px solid var(--border); border-radius: 6px; }
+    #roastResult {
+      background: var(--form-bg);
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+    /* Wrap text within <pre> and break long lines */
+    #roastResult pre {
+      white-space: pre-wrap;       /* Preserve whitespace but allow wrapping */
+      overflow-wrap: break-word;   /* Break long words */
+      word-break: break-all;       /* Break at any character if needed */
+      font-family: monospace;
+      margin: 0;
+    }
     hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
   </style>
 </head>
