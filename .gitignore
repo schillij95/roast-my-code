@@ -7,3 +7,5 @@ roast_summary.txt
 =*
 *.wav
 venv/
+tts/
+clapbacks.db

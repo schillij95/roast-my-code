@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Shared Clapback {{ clapback.id }}</title>
+  <style>
+    body { background: #0e1117; color: #c9d1d9; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; }
+    .container { max-width: 900px; margin: 2rem auto; padding: 1rem; }
+    pre { background: #161b22; padding: 1rem; border-radius: 6px; white-space: pre-wrap; overflow-wrap: break-word; word-break: break-all; font-family: monospace; margin: 0; }
+    audio { margin-top: 1rem; display: block; }
+    a.button { display: inline-block; margin-top: 1rem; padding: 0.5rem 1rem; background: #58a6ff; color: #0e1117; text-decoration: none; border-radius: 4px; }
+    a.button:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Clapback #{{ clapback.id }}</h1>
+    <pre>{{ clapback.llm_response }}</pre>
+    {% if clapback.audio_url %}
+    <audio controls autoplay src="{{ clapback.audio_url }}"></audio>
+    {% endif %}
+    <a href="/" class="button">Back to Roast</a>
+  </div>
+</body>
+</html>
