@@ -31,6 +31,12 @@ To roast a GItHub profile, set up the GITHUB_TOKEN by creating a classic github 
 export GITHUB_TOKEN=your_token_here
 ```
 
+### Docker Compose Setup
+
+```bash
+sudo docker compose up --build
+```
+
 ## Usage
 Pull your favourite LLM:
 ```bash
