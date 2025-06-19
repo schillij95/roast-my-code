@@ -55,6 +55,13 @@
           {% endfor %}
         </select>
         <label><input type="checkbox" name="detailed"> Detailed Roast</label>
+        <label><input type="checkbox" name="tts"> Enable Voice Output</label>
+        <label for="voiceSelect">Voice:</label>
+        <select id="voiceSelect" name="voice">
+          {% for v in voices %}
+          <option value="{{ v }}" {% if v == default_voice %}selected{% endif %}>{{ v }}</option>
+          {% endfor %}
+        </select>
         <button type="submit">Roast Code</button>
       </form>
     </div>
@@ -79,6 +86,13 @@
           {% endfor %}
         </select>
         <label><input type="checkbox" name="detailed"> Detailed Roast</label>
+        <label><input type="checkbox" name="tts"> Enable Voice Output</label>
+        <label for="voiceSelect2">Voice:</label>
+        <select id="voiceSelect2" name="voice">
+          {% for v in voices %}
+          <option value="{{ v }}" {% if v == default_voice %}selected{% endif %}>{{ v }}</option>
+          {% endfor %}
+        </select>
         <button type="submit">Roast GitHub</button>
       </form>
     </div>

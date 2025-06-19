@@ -3,13 +3,21 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 import ollama
 import os
+import uuid
+import numpy as np
+import soundfile as sf
+from fastapi.staticfiles import StaticFiles
 
-from config import EXAMPLE_SNIPPETS, ROAST_STYLES
+from utils.speech import pipeline
+
+from config import EXAMPLE_SNIPPETS, ROAST_STYLES, VOICES, DEFAULT_VOICE
 from utils.parser import parse_full_github_user, parse_repo
 from utils.summarize_git import critique_code_dict
 from utils.llm import generate_code_roast, get_model_names
 
 app = FastAPI()
+os.makedirs("tts", exist_ok=True)
+app.mount("/tts", StaticFiles(directory="tts"), name="tts")
 templates = Jinja2Templates(directory="templates")
 
 if "OLLAMA_HOST" in os.environ:
@@ -23,8 +31,27 @@ async def index(request: Request):
         "request": request,
         "examples": EXAMPLE_SNIPPETS,
         "models": models,
-        "roast_styles": roast_styles
+        "roast_styles": roast_styles,
+        "voices": VOICES,
+        "default_voice": DEFAULT_VOICE
     })
+
+def generate_tts_audio(text: str, voice: str) -> str:
+    """
+    Generate TTS audio from text and save to tts directory, returning URL path.
+    """
+    segments = []
+    for _, _, audio in pipeline(text, voice=voice):
+        segments.append(audio)
+    if segments:
+        data = np.concatenate(segments)
+    else:
+        data = np.array([], dtype='float32')
+    audio_id = str(uuid.uuid4())
+    filename = f"{audio_id}.wav"
+    filepath = os.path.join("tts", filename)
+    sf.write(filepath, data, 24000)
+    return f"/tts/{filename}"
 
 @app.get("/example", response_class=HTMLResponse)
 async def example(example: str):
@@ -39,7 +66,9 @@ async def roast_code_snippet(
     code: str = Form(...),
     model: str = Form(...),
     roast_style: str = Form(...),
-    detailed: str = Form(None)
+    detailed: str = Form(None),
+    tts: str = Form(None),
+    voice: str = Form(DEFAULT_VOICE)
 ):
     detailed_bool = bool(detailed)
     roast_text = generate_code_roast(
@@ -51,6 +80,9 @@ async def roast_code_snippet(
         stream=False
     )
     html = f"<pre>{roast_text}</pre>"
+    if tts:
+        audio_url = generate_tts_audio(roast_text, voice)
+        html += f"<audio controls autoplay src=\"{audio_url}\"></audio>"
     return HTMLResponse(content=html)
 
 @app.post("/roast/github-profile-html", response_class=HTMLResponse)
@@ -60,7 +92,9 @@ async def roast_github_profile(
     repository: str = Form(""),
     model: str = Form(...),
     roast_style: str = Form(...),
-    detailed: str = Form(None)
+    detailed: str = Form(None),
+    tts: str = Form(None),
+    voice: str = Form(DEFAULT_VOICE)
 ):
     detailed_bool = bool(detailed)
     if not repository:
@@ -79,6 +113,9 @@ async def roast_github_profile(
         stream=False
     )
     html = f"<pre>{roast_text}</pre>"
+    if tts:
+        audio_url = generate_tts_audio(roast_text, voice)
+        html += f"<audio controls autoplay src=\"{audio_url}\"></audio>"
     return HTMLResponse(content=html)
 
 if __name__ == "__main__":
