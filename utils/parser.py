@@ -1,17 +1,16 @@
-import os
 import requests
 import base64
 import json
 from tqdm import tqdm
+from utils.settings import GITHUB_TOKEN
 
 # -----------------------------
 # CONFIGURATION
 # -----------------------------
 GITHUB_API_URL = "https://api.github.com"
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-
+# GITHUB_TOKEN is loaded from .env via utils/settings
 if not GITHUB_TOKEN:
-    print("GitHub token not found. Set the GITHUB_TOKEN environment variable.")
+    print("GitHub token not found. Please add GITHUB_TOKEN to your .env file.")
 
 HEADERS = {
     "Authorization": f"token {GITHUB_TOKEN}",

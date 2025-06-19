@@ -26,9 +26,17 @@ If you want to use the speech output feature, you need to install `espeak-ng`. Y
 sudo apt-get -y install espeak-ng
 ```
 
-To roast a GItHub profile, set up the GITHUB_TOKEN by creating a classic github token. Then export it to the environment:
+### Environment Variables
+To authenticate to services, you can either export env vars in your shell or create a `.env` file at the project root (see `.env.example`).
+
+For GitHub profile roasting:
 ```bash
 export GITHUB_TOKEN=your_token_here
+```
+
+If you plan to use the OpenAI Python client in the future (not required for Ollama):
+```bash
+export OPENAI_API_KEY=your_openai_api_key_here
 ```
 
 ### Docker Compose Setup
