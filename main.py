@@ -67,19 +67,18 @@ def roast_style_selection(container):
     """
     Render a roast style selection dropdown in the given container.
     """
+    # Show only style names in the dropdown, but return name plus description for the LLM
+    names = [r['name'] for r in ROAST_STYLES]
     selected = container.selectbox(
-        "Select Roast Style", 
-        options=[r['name'] for r in ROAST_STYLES], 
-        index=0, 
+        "Select Roast Style",
+        options=names,
+        index=0,
         accept_new_options=True
     )
-    roast_style = next((r for r in ROAST_STYLES if r['name'] == selected), None)
-    if not roast_style:
-        return selected
-    return '{name} ({description})'.format(
-        name=roast_style['name'],
-        description=roast_style['description']
-    )
+    style = next((r for r in ROAST_STYLES if r['name'] == selected), None)
+    if style:
+        return f"{style['name']} ({style['description']})"
+    return selected
 
 def draw_sidebar():
     """
