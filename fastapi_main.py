@@ -8,7 +8,7 @@ import numpy as np
 import soundfile as sf
 from fastapi.staticfiles import StaticFiles
 
-from utils.speech import pipeline
+from utils.speech import pipeline, cleanup_prompt
 
 from config import EXAMPLE_SNIPPETS, ROAST_STYLES, VOICES, DEFAULT_VOICE
 from utils.parser import parse_full_github_user, parse_repo
@@ -40,8 +40,10 @@ def generate_tts_audio(text: str, voice: str) -> str:
     """
     Generate TTS audio from text and save to tts directory, returning URL path.
     """
+    # remove emojis and prepare text for TTS
+    cleaned_text = cleanup_prompt(text)
     segments = []
-    for _, _, audio in pipeline(text, voice=voice):
+    for _, _, audio in pipeline(cleaned_text, voice=voice):
         segments.append(audio)
     if segments:
         data = np.concatenate(segments)
