@@ -9,3 +9,4 @@ roast_summary.txt
 venv/
 tts/
 clapbacks.db
+*.env
