@@ -1,0 +1,41 @@
+volumes:
+  ollama_data:
+
+services:
+  ollama:
+    build:
+      context: .
+      dockerfile: Dockerfile_ollama    
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    entrypoint: >
+      sh -c "
+        echo 'Starting Ollama in background...';
+        /bin/ollama serve &
+
+        echo 'Waiting for Ollama API...';
+        until curl -s http://localhost:11434/api/tags; do sleep 1; done;
+
+        echo 'Pulling model mistral:instruct...';
+        curl -X POST http://localhost:11434/api/pull -H 'Content-Type: application/json' -d '{\"name\": \"mistral:instruct\"}'
+        echo 'Model pulled. Keeping Ollama running...';
+        wait
+      "
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile_frontend
+    container_name: frontend
+    ports:
+      - 5030:5030
+    depends_on:
+      - ollama
+    command: bash -c 'streamlit run main.py --server.port=5030 --server.address=0.0.0.0'
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    restart: always

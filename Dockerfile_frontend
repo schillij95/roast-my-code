@@ -1,0 +1,45 @@
+FROM python:3.12 AS builder
+
+WORKDIR /app
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+ADD requirements.txt /app
+RUN pip3 wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.txt
+
+###################################################################################
+
+FROM python:3.12
+
+RUN mkdir -p /home/app
+RUN addgroup --system app && adduser --system --group app
+ENV HOME=/home/app
+ENV APP_HOME=/home/app/web
+RUN mkdir -p $APP_HOME
+
+WORKDIR $APP_HOME
+
+RUN apt-get update
+RUN apt-get -y install espeak-ng
+
+COPY --from=builder /app/wheels /wheels
+COPY --from=builder app/requirements.txt .
+RUN pip install --upgrade pip
+RUN pip install --no-cache /wheels/*
+RUN python3 -m spacy download en_core_web_sm
+
+RUN mkdir -p $HOME/.local
+RUN mkdir -p $HOME/.streamlit
+RUN mkdir -p $HOME/.cache/huggingface
+
+COPY *.py ${APP_HOME}
+COPY utils/ ${APP_HOME}/utils/
+ENV PORT=5030
+EXPOSE 5030
+
+RUN chown -R app:app $APP_HOME
+RUN chown -R app:app $HOME/.local
+RUN chown -R app:app $HOME/.streamlit
+RUN chown -R app:app $HOME/.cache/huggingface
+
+USER app

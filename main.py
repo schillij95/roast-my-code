@@ -3,6 +3,10 @@ from utils.llm import get_model_names, generate_code_roast
 from utils.parser import parse_full_github_user, parse_repo
 from utils.summarize_git import critique_code_dict
 from config import ROAST_STYLES, EXAMPLE_SNIPPETS, VOICES, DEFAULT_VOICE
+import torch
+
+torch.classes.__path__ = [] # hack to satisfy torch within docker madness
+
 
 def init():
     """
