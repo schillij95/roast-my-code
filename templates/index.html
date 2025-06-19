@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Roast My Code</title>
+  <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    label { display: block; margin-top: 10px; }
+    select, textarea, input[type="text"] { width: 100%; max-width: 600px; }
+    button { margin-top: 10px; }
+    #roastResult { margin-top: 20px; white-space: pre-wrap; background: #f9f9f9; padding: 10px; border: 1px solid #ddd; }
+  </style>
+</head>
+<body>
+  <h1>Roast My Code</h1>
+  <h2>Code Snippet</h2>
+  <form hx-post="/roast/code-snippet-html" hx-target="#roastResult" hx-swap="innerHTML">
+    <label for="exampleSelect">Example Snippets:</label>
+    <select id="exampleSelect" name="example" hx-get="/example" hx-target="#codeArea" hx-swap="outerHTML">
+      {% for ex in examples %}
+      <option value="{{ ex.title }}">{{ ex.title }}</option>
+      {% endfor %}
+    </select>
+    <div id="codeArea">
+      <textarea id="code" name="code" rows="10">{{ examples[0].code }}</textarea>
+    </div>
+    <label for="modelSelect">Model:</label>
+    <select id="modelSelect" name="model">
+      {% for m in models %}
+      <option value="{{ m }}">{{ m }}</option>
+      {% endfor %}
+    </select>
+    <label for="styleSelect">Roast Style:</label>
+    <select id="styleSelect" name="roast_style">
+      {% for style in roast_styles %}
+      <option value="{{ style }}">{{ style }}</option>
+      {% endfor %}
+    </select>
+    <label><input type="checkbox" name="detailed"> Detailed Roast</label>
+    <button type="submit">Roast Code</button>
+  </form>
+  <div id="roastResult"></div>
+  <hr>
+  <h2>GitHub Profile Roast</h2>
+  <form hx-post="/roast/github-profile-html" hx-target="#roastResult" hx-swap="innerHTML">
+    <label for="profile">GitHub Profile:</label>
+    <input type="text" id="profile" name="profile" placeholder="schillij95">
+    <label for="repository">Repository (optional):</label>
+    <input type="text" id="repository" name="repository" placeholder="roast-my-code">
+    <label for="modelSelect2">Model:</label>
+    <select id="modelSelect2" name="model">
+      {% for m in models %}
+      <option value="{{ m }}">{{ m }}</option>
+      {% endfor %}
+    </select>
+    <label for="styleSelect2">Roast Style:</label>
+    <select id="styleSelect2" name="roast_style">
+      {% for style in roast_styles %}
+      <option value="{{ style }}">{{ style }}</option>
+      {% endfor %}
+    </select>
+    <label><input type="checkbox" name="detailed"> Detailed Roast</label>
+    <button type="submit">Roast GitHub</button>
+  </form>
+</body>
+</html>
