@@ -1,7 +1,36 @@
 volumes:
   ollama_data:
+  pgdata:
 
 services:
+  database:
+    build:
+      context: database
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postgres
+      TZ: Europe/Zurich
+    command: 
+      [
+        "postgres",
+        "-c",
+        "log_destination=stderr",
+        "-c",
+        "shared_preload_libraries=pg_cron",
+      ]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/install_extensions.sql:/docker-entrypoint-initdb.d/01-install_extensions.sql
+      - ./database/create_database.sql:/docker-entrypoint-initdb.d/02-create_database.sql
+    ports:
+      - 5031:5432
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   ollama:
     build:
       context: .
@@ -35,6 +64,7 @@ services:
       - 5030:5030
     depends_on:
       - ollama
+      - database
     command: bash -c 'streamlit run main.py --server.port=5030 --server.address=0.0.0.0'
     environment:
       - OLLAMA_HOST=http://ollama:11434

@@ -4,7 +4,8 @@ import streamlit as st
 from config import PROMPT_CODE_SNIPPET_TEMPLATE, PROMPT_GITHUB_PROFILE_TEMPLATE
 
 
-ollama.Client(host=os.environ["OLLAMA_HOST"])
+if "OLLAMA_HOST" in os.environ:
+    ollama.Client(host=os.environ["OLLAMA_HOST"])
 
 
 def get_model_names():

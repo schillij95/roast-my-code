@@ -6,3 +6,4 @@ roast_summary.txt
 *.pyo
 =*
 *.wav
+venv/
