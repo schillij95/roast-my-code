@@ -17,7 +17,7 @@ def get_model_names():
     """
     return [model.model for model in ollama.list().get('models', [])]
 
-def get_llm_response(prompt: str, stream=True):
+def get_llm_response(prompt: str, stream=True, model=None):
     """
     Generate a response from the selected LLM model using a given prompt.
 
@@ -27,18 +27,20 @@ def get_llm_response(prompt: str, stream=True):
     Returns:
         generator: A generator yielding response chunks from the LLM.
     """
-    model = st.session_state.get('model')
-    if not model:
-        raise ValueError("No model selected in session state.")
-    # Stream responses for efficient UI updates
-    result = ollama.generate(model=model, prompt=prompt, stream=stream)
+    if model is None:
+        model_name = st.session_state.get('model')
+        if not model_name:
+            raise ValueError("No model selected in session state.")
+    else:
+        model_name = model
+    result = ollama.generate(model=model_name, prompt=prompt, stream=stream)
 
     if stream:
         return result  # generator
     else:
         return result['response']  # full string
 
-def generate_code_roast(code: str, roast_style: str, detailed: bool = False, type: str = "code snippet"):
+def generate_code_roast(code: str, roast_style: str, detailed: bool = False, type: str = "code snippet", model=None, stream=True):
     """
     Generate a code roast using the LLM based on the provided code and roast style.
 
@@ -65,4 +67,4 @@ def generate_code_roast(code: str, roast_style: str, detailed: bool = False, typ
         code=code,
         roast_style=roast_style + (" (mention specific files)" if detailed else " (use at most 3 sentences)"),
     )
-    return get_llm_response(prompt)
+    return get_llm_response(prompt, stream=stream, model=model)
