@@ -1,40 +1,53 @@
 import os
-import sqlite3
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
 
-# Determine database path; fallback to SQLite file if no DATABASE_URL provided
-db_path = os.getenv("DATABASE_URL", "")
-if db_path.startswith("sqlite:///"):
-    db_path = db_path.split("sqlite:///")[1]
-elif not db_path:
-    db_path = os.path.join(os.path.dirname(__file__), os.pardir, "clapbacks.db")
-
-conn = sqlite3.connect(db_path, check_same_thread=False)
-conn.row_factory = sqlite3.Row
-cursor = conn.cursor()
-# Create table for storing shared clapbacks
-cursor.execute(
-    """
-    CREATE TABLE IF NOT EXISTS clapbacks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        llm_response TEXT NOT NULL,
-        audio_url TEXT,
-        create_ts DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-    """
+# Use DATABASE_URL env var or default to localhost Postgres (host=localhost:5031)
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://postgres:postgres@localhost:5031/postgres"
 )
-conn.commit()
+
+# Create SQLAlchemy engine and session factory
+engine = create_engine(DATABASE_URL, echo=False, future=True)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Initialize database schema
+with engine.begin() as conn:
+    conn.execute(
+        text(
+            """
+            CREATE TABLE IF NOT EXISTS clapbacks (
+                id SERIAL PRIMARY KEY,
+                llm_response TEXT NOT NULL,
+                audio_url TEXT,
+                create_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+    )
 
 def insert_clapback(llm_response: str, audio_url: str = None) -> int:
-    cursor.execute(
-        "INSERT INTO clapbacks (llm_response, audio_url) VALUES (?, ?)",
-        (llm_response, audio_url),
-    )
-    conn.commit()
-    return cursor.lastrowid
+    """Insert a new clapback and return its ID."""
+    with SessionLocal() as session:
+        result = session.execute(
+            text(
+                "INSERT INTO clapbacks (llm_response, audio_url)"
+                " VALUES (:llm_response, :audio_url) RETURNING id"
+            ),
+            {"llm_response": llm_response, "audio_url": audio_url},
+        )
+        session.commit()
+        return result.scalar_one()
 
 def get_clapback(clapback_id: int):
-    cursor.execute(
-        "SELECT id, llm_response, audio_url, create_ts FROM clapbacks WHERE id = ?",
-        (clapback_id,),
-    )
-    return cursor.fetchone()
+    """Retrieve a clapback by ID, returning a dict or None."""
+    with engine.connect() as conn:
+        row = conn.execute(
+            text(
+                "SELECT id, llm_response, audio_url, create_ts"
+                " FROM clapbacks WHERE id = :id"
+            ),
+            {"id": clapback_id},
+        ).mappings().first()
+    return dict(row) if row else None
