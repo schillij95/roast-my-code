@@ -12,3 +12,4 @@ python-dotenv
 sqlalchemy>=2.0
 psycopg2-binary
 openai>=1.0.0
+stripe>=4.0.0

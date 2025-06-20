@@ -1,6 +1,7 @@
 volumes:
   ollama_data:
   pgdata:
+  stripe_cli_data:
 
 services:
   database:
@@ -74,3 +75,15 @@ services:
       - TZ=Europe/Zurich
       - DATABASE_URL=postgresql://postgres:postgres@database:5432/postgres
     restart: always
+  stripe-cli:
+    image: stripe/stripe-cli:latest
+    container_name: stripe-cli
+    volumes:
+      - stripe_cli_data:/root/.config/stripe
+    command: ["listen", "--forward-to", "http://frontend:5030/webhook"]
+    environment:
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+    depends_on:
+      - frontend
+    restart: unless-stopped

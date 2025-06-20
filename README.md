@@ -55,3 +55,84 @@ To run the application, use:
 ```bash
 streamlit run main.py
 ```
+  
+## Stripe Integration
+
+We support purchasing "pay-it-forward" credits via Stripe Checkout.  Credits are used to generate code roasts.
+
+### 1) Environment Variables
+Add the following variables to your `.env` file (or export in your shell):
+```ini
+# Stripe API Keys (get these from your Stripe Dashboard)
+STRIPE_SECRET_KEY=sk_test_your_secret_key_here
+STRIPE_PUBLISHABLE_KEY=pk_test_your_publishable_key_here
+# The Price ID you created in Stripe (e.g. one-time product price with metadata `credits`)
+STRIPE_PRICE_ID=price_1ABCxyz...
+# Your Stripe webhook signing secret (from Developers → Webhooks → your endpoint)
+STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
+```
+
+### 2) Install and Configure Stripe CLI (for local testing)
+Follow Stripe's [CLI install guide](https://stripe.com/docs/stripe-cli#install) for your platform, or use Docker:
+
+- macOS (Homebrew):
+  ```bash
+  brew install stripe/stripe-cli/stripe
+  ```
+- Debian/Ubuntu (apt):
+  ```bash
+  curl -sS https://packages.stripe.dev/debian/checkout/install.sh | sudo bash
+  sudo apt-get install stripe
+  ```
+- RHEL/CentOS (yum):
+  ```bash
+  curl -sS https://packages.stripe.dev/rpm/checkout/install.sh | sudo bash
+  sudo yum install stripe
+  ```
+- Windows (Scoop):
+  ```powershell
+  scoop install stripe
+  ```
+- Or via Docker (no local install required):
+  ```bash
+  docker run --rm -it stripe/stripe-cli:latest listen --forward-to localhost:5030/webhook
+  ```
+
+After installation or Docker launch, authenticate your CLI session (if installed locally):
+```bash
+stripe login
+```
+
+### 3) Forward Webhooks Locally
+Use the Stripe CLI to forward events to your local FastAPI server:
+```bash
+stripe listen --forward-to localhost:5030/webhook
+```
+This will print out a webhook signing secret (`whsec_...`) and forward `checkout.session.completed` events to `http://localhost:5030/webhook`.
+
+### 4) Create a Stripe Price with Credits Metadata
+1. In the Stripe Dashboard, go to **Products** → your product or create a new one.
+2. Under **Pricing**, create a Price (e.g. $5 USD).
+3. In the **Metadata** section, add a key `credits` with the integer number of credits this purchase provides (e.g. `10`).
+
+### 5) Testing Purchases
+1. Start your FastAPI server (default at port 5030).
+2. Open the web UI, click **Buy Credits**, and complete the test checkout.
+3. After payment, the CLI will forward the webhook and your local DB will increment the credit counter.
+
+Now you’re all set to accept test payments and see credits update in real-time!
+
+## Docker Compose Support for Stripe CLI
+We've added a `stripe-cli` service to `docker-compose.yml` that will forward webhooks from Stripe into your local FastAPI server, with login state persisted across restarts.
+
+1. Perform a one-time login in the Stripe CLI container (credentials are stored in a Docker volume):
+```bash
+docker compose run --rm stripe-cli login
+```
+This will open the Stripe authentication flow; follow the prompts to log in.
+
+2. Start (or restart) all services, including stripe-cli:
+```bash
+docker compose up --build
+```
+The `stripe-cli` container will now automatically forward `checkout.session.completed` events to `http://localhost:5030/webhook`.

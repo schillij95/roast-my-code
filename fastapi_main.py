@@ -1,7 +1,8 @@
-from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, Form, HTTPException
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 import ollama
+import stripe
 import os
 from fastapi.staticfiles import StaticFiles
 
@@ -20,6 +21,8 @@ templates = Jinja2Templates(directory="templates")
 
 if "OLLAMA_HOST" in os.environ:
     ollama.Client(host=os.environ["OLLAMA_HOST"])
+# Initialize Stripe if keys are provided
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "")
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -28,6 +31,9 @@ async def index(request: Request):
     roast_styles = [r['name'] for r in ROAST_STYLES]
     # Fetch remaining pay-it-forward credits
     credits_remaining = get_remaining_credits()
+    # Pass Stripe publishable key and price ID for Checkout
+    stripe_pk = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
+    stripe_price_id = os.environ.get("STRIPE_PRICE_ID", "")
     return templates.TemplateResponse("index.html", {
         "request": request,
         "examples": EXAMPLE_SNIPPETS,
@@ -36,6 +42,8 @@ async def index(request: Request):
         "voices": VOICES,
         "default_voice": DEFAULT_VOICE,
         "credits_remaining": credits_remaining,
+        "stripe_pk": stripe_pk,
+        "stripe_price_id": stripe_price_id,
     })
 
 
@@ -45,6 +53,48 @@ async def example(example: str):
     code = snippet['code'] if snippet else ""
     html = f"""<div id=\"codeArea\">\n<textarea id=\"code\" name=\"code\" rows=\"10\">{code}</textarea>\n</div>"""
     return HTMLResponse(content=html)
+  
+@app.post("/create-checkout-session")
+async def create_checkout_session(request: Request):
+    """Create a Stripe Checkout session to purchase credits."""
+    # Must have secret key and price ID
+    price_id = os.environ.get("STRIPE_PRICE_ID")
+    if not stripe.api_key or not price_id:
+        raise HTTPException(status_code=500, detail="Stripe is not configured.")
+    session = stripe.checkout.Session.create(
+        payment_method_types=["card"],
+        line_items=[{"price": price_id, "quantity": 1}],
+        mode="payment",
+        success_url=request.url_for("index"),
+        cancel_url=request.url_for("index"),
+    )
+    return JSONResponse({"sessionId": session.id})
+
+@app.post("/webhook")
+async def stripe_webhook(request: Request):
+    """Handle incoming Stripe webhook events."""
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+        )
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid Stripe webhook signature")
+    # Handle checkout session completion
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+        # Retrieve session with expanded line items and price metadata
+        sess = stripe.checkout.Session.retrieve(
+            session["id"], expand=["line_items.data.price"]
+        )
+        items = sess["line_items"]["data"]
+        if items:
+            price_obj = items[0]["price"]
+            credits = int(price_obj.get("metadata", {}).get("credits", 0))
+            if credits > 0:
+                increment_credits(credits)
+    return JSONResponse({"status": "success"})
 
 @app.get("/share/{clapback_id}", response_class=HTMLResponse, name="share_clapback")
 async def share_clapback(request: Request, clapback_id: int):

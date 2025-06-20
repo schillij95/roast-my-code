@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Roast My Code</title>
   <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+  <script src="https://js.stripe.com/v3/"></script>
   <style>
     :root {
       --bg: #0e1117;
@@ -49,6 +50,18 @@
       Credits Remaining: <span id="credit-count">{{ credits_remaining }}</span>
       <button hx-post="/credits/update?delta=1" hx-target="#credits" hx-swap="outerHTML">+1</button>
       <button hx-post="/credits/update?delta=-1" hx-target="#credits" hx-swap="outerHTML">-1</button>
+    </div>
+    <div class="form-section">
+      <h2>Buy Credits</h2>
+      <button id="buy-credits">Buy Credits</button>
+      <script>
+        const stripe = Stripe("{{ stripe_pk }}");
+        document.getElementById("buy-credits").addEventListener("click", () => {
+          fetch("/create-checkout-session", { method: "POST" })
+            .then(res => res.json())
+            .then(data => stripe.redirectToCheckout({ sessionId: data.sessionId }));
+        });
+      </script>
     </div>
     <div class="form-section">
       <h2>Code Snippet</h2>
