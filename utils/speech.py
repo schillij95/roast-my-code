@@ -1,4 +1,7 @@
 
+import os
+import uuid
+import numpy as np
 from kokoro import KPipeline
 import soundfile as sf
 import streamlit as st
@@ -81,3 +84,49 @@ def cleanup_prompt(text):
     text = emoji_pattern.sub(r'', text)
     text.replace('*', '')
     return text
+ 
+def generate_tts_audio(text: str, voice: str, out_dir: str = 'tts') -> str:
+    """
+    Generate TTS audio using OpenAI TTS if available, otherwise fallback to local pipeline.
+    Saves WAV file under out_dir and returns the URL path.
+    """
+    cleaned_text = cleanup_prompt(text)
+    # Try OpenAI TTS first
+    if os.getenv('OPENAI_API_KEY'):
+        try:
+            import openai
+        except ImportError:
+            raise RuntimeError('OPENAI_API_KEY set but openai package not installed')
+        openai.api_key = os.environ['OPENAI_API_KEY']
+        print(f"[LLM][OpenAI][TTS] Prompt: {cleaned_text}")
+        try:
+            audio_id = str(uuid.uuid4())
+            filename = f"{audio_id}.wav"
+            filepath = os.path.join(out_dir, filename)
+            with openai.audio.speech.with_streaming_response.create(
+                model='gpt-4o-mini-tts',
+                voice='alloy',
+                input=cleaned_text,
+                instructions="Speak in an enraged tone.",
+                response_format='wav'  # Use 'wav' for WAV format output
+            ) as resp:
+                print(f"[LLM][OpenAI][TTS] Response: {resp}")
+                os.makedirs(out_dir, exist_ok=True)
+                resp.stream_to_file(filepath)
+            return f"/{out_dir}/{filename}"
+        except Exception as e:
+            print(f"[LLM][OpenAI][TTS] Error: {e}, falling back to local TTS.")
+    # Fallback local pipeline
+    segments = []
+    for _, _, audio in pipeline(cleaned_text, voice=voice):
+        segments.append(audio)
+    if segments:
+        data = np.concatenate(segments)
+    else:
+        data = np.array([], dtype='float32')
+    audio_id = str(uuid.uuid4())
+    filename = f"{audio_id}.wav"
+    filepath = os.path.join(out_dir, filename)
+    os.makedirs(out_dir, exist_ok=True)
+    sf.write(filepath, data, 24000)
+    return f"/{out_dir}/{filename}"

@@ -3,12 +3,9 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 import ollama
 import os
-import uuid
-import numpy as np
-import soundfile as sf
 from fastapi.staticfiles import StaticFiles
 
-from utils.speech import pipeline, cleanup_prompt
+from utils.speech import pipeline, cleanup_prompt, generate_tts_audio
 from utils.db import insert_clapback, get_clapback
 
 from config import EXAMPLE_SNIPPETS, ROAST_STYLES, VOICES, DEFAULT_VOICE
@@ -38,24 +35,6 @@ async def index(request: Request):
         "default_voice": DEFAULT_VOICE
     })
 
-def generate_tts_audio(text: str, voice: str) -> str:
-    """
-    Generate TTS audio from text and save to tts directory, returning URL path.
-    """
-    # remove emojis and prepare text for TTS
-    cleaned_text = cleanup_prompt(text)
-    segments = []
-    for _, _, audio in pipeline(cleaned_text, voice=voice):
-        segments.append(audio)
-    if segments:
-        data = np.concatenate(segments)
-    else:
-        data = np.array([], dtype='float32')
-    audio_id = str(uuid.uuid4())
-    filename = f"{audio_id}.wav"
-    filepath = os.path.join("tts", filename)
-    sf.write(filepath, data, 24000)
-    return f"/tts/{filename}"
 
 @app.get("/example", response_class=HTMLResponse)
 async def example(example: str):
@@ -85,6 +64,7 @@ async def roast_code_snippet(
     # include the human-readable description in the roast style
     style_def = next((r for r in ROAST_STYLES if r['name'] == roast_style), None)
     roast_style_full = f"{style_def['name']} ({style_def['description']})" if style_def else roast_style
+    # generate roast via utils.llm (uses OpenAI or Ollama under the hood)
     roast_text = generate_code_roast(
         code,
         roast_style_full,
@@ -125,6 +105,7 @@ async def roast_github_profile(
     # include the human-readable description in the roast style
     style_def = next((r for r in ROAST_STYLES if r['name'] == roast_style), None)
     roast_style_full = f"{style_def['name']} ({style_def['description']})" if style_def else roast_style
+    # generate roast via utils.llm (uses OpenAI or Ollama under the hood)
     roast_text = generate_code_roast(
         summary_text,
         roast_style_full,
