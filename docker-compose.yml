@@ -74,6 +74,10 @@ services:
       - OLLAMA_HOST=http://ollama:11434
       - TZ=Europe/Zurich
       - DATABASE_URL=postgresql://postgres:postgres@database:5432/postgres
+      # Stripe configuration
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
     restart: always
   stripe-cli:
     image: stripe/stripe-cli:latest

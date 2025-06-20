@@ -2,12 +2,12 @@ from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 import ollama
-import stripe
 import os
 from fastapi.staticfiles import StaticFiles
 
 from utils.speech import pipeline, cleanup_prompt, generate_tts_audio
 from utils.db import insert_clapback, get_clapback, get_remaining_credits, increment_credits, decrement_credits, reset_credits
+from utils.stripe import create_checkout_session, process_webhook
 
 from config import EXAMPLE_SNIPPETS, ROAST_STYLES, VOICES, DEFAULT_VOICE
 from utils.parser import parse_full_github_user, parse_repo
@@ -21,8 +21,6 @@ templates = Jinja2Templates(directory="templates")
 
 if "OLLAMA_HOST" in os.environ:
     ollama.Client(host=os.environ["OLLAMA_HOST"])
-# Initialize Stripe if keys are provided
-stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "")
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -53,40 +51,17 @@ async def example(example: str):
     return HTMLResponse(content=html)
   
 @app.post("/create-checkout-session")
-async def create_checkout_session(request: Request):
-    """Create a Stripe Checkout session to purchase roasts based on dollar amount."""
-    if not stripe.api_key:
-        raise HTTPException(status_code=500, detail="Stripe is not configured.")
+async def create_checkout_session_route(request: Request):
+    """HTTP endpoint to create a Stripe Checkout Session."""
     data = await request.json()
-    try:
-        dollars = float(data.get("dollars", 0))
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid dollar amount")
-    if dollars <= 0:
-        raise HTTPException(status_code=400, detail="Dollar amount must be greater than 0")
-    # Compute roasts: 1 USD buys 10 roasts
-    roasts = int(dollars * 10)
-    # Build dynamic price data
-    amount_cents = int(dollars * 100)
-    session = stripe.checkout.Session.create(
-        payment_method_types=["card"],
-        line_items=[{
-            "price_data": {
-                "currency": "usd",
-                "unit_amount": amount_cents,
-                "product_data": {
-                    "name": f"{roasts} Roasts",
-                    "description": f"Be the good guy. Buy {roasts} roasts for ${dollars:.2f}"
-                }
-            },
-            "quantity": 1
-        }],
-        mode="payment",
-        success_url=request.url_for("index"),
-        cancel_url=request.url_for("index"),
-        metadata={"roasts": roasts}
+    success_url = request.url_for("index")
+    cancel_url = request.url_for("index")
+    session_id = create_checkout_session(
+        dollars=data.get("dollars", 0),
+        success_url=success_url,
+        cancel_url=cancel_url,
     )
-    return JSONResponse({"sessionId": session.id})
+    return JSONResponse({"sessionId": session_id})
   
 @app.post("/credits/reset", response_class=HTMLResponse)
 async def credits_reset(request: Request):
@@ -104,23 +79,15 @@ async def credits_reset(request: Request):
     return HTMLResponse(content=html)
 
 @app.post("/webhook")
-async def stripe_webhook(request: Request):
-    """Handle incoming Stripe webhook events."""
+async def stripe_webhook_route(request: Request):
+    """HTTP endpoint to receive Stripe webhooks."""
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
-    try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, os.environ.get("STRIPE_WEBHOOK_SECRET", "")
-        )
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid Stripe webhook signature")
-    # Handle checkout session completion
-    if event["type"] == "checkout.session.completed":
-        session = event["data"]["object"]
-        # Read roasts count from session metadata
-        roasts = int(session.get("metadata", {}).get("roasts", 0))
-        if roasts > 0:
-            increment_credits(roasts)
+    process_webhook(
+        payload=payload,
+        sig_header=sig_header,
+        webhook_secret=os.environ.get("STRIPE_WEBHOOK_SECRET", ""),
+    )
     return JSONResponse({"status": "success"})
 
 @app.get("/share/{clapback_id}", response_class=HTMLResponse, name="share_clapback")
