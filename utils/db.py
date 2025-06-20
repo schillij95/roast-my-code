@@ -106,3 +106,11 @@ def decrement_credits() -> bool:
             text("UPDATE payitforward_credits SET remaining = remaining - 1 WHERE id = 1")
         )
         return True
+  
+def reset_credits() -> int:
+    """Reset the pay-it-forward credits to zero and return new total."""
+    with engine.begin() as conn:
+        conn.execute(
+            text("UPDATE payitforward_credits SET remaining = 0 WHERE id = 1")
+        )
+    return get_remaining_credits()

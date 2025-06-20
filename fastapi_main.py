@@ -1,12 +1,13 @@
-from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, Form, HTTPException
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 import ollama
 import os
 from fastapi.staticfiles import StaticFiles
 
 from utils.speech import pipeline, cleanup_prompt, generate_tts_audio
-from utils.db import insert_clapback, get_clapback, get_remaining_credits, increment_credits, decrement_credits
+from utils.db import insert_clapback, get_clapback, get_remaining_credits, increment_credits, decrement_credits, reset_credits
+from utils.stripe import create_checkout_session, process_webhook
 
 from config import EXAMPLE_SNIPPETS, ROAST_STYLES, VOICES, DEFAULT_VOICE
 from utils.parser import parse_full_github_user, parse_repo
@@ -28,6 +29,8 @@ async def index(request: Request):
     roast_styles = [r['name'] for r in ROAST_STYLES]
     # Fetch remaining pay-it-forward credits
     credits_remaining = get_remaining_credits()
+    # Pass Stripe publishable key and price ID for Checkout
+    stripe_pk = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
     return templates.TemplateResponse("index.html", {
         "request": request,
         "examples": EXAMPLE_SNIPPETS,
@@ -36,6 +39,7 @@ async def index(request: Request):
         "voices": VOICES,
         "default_voice": DEFAULT_VOICE,
         "credits_remaining": credits_remaining,
+        "stripe_pk": stripe_pk,
     })
 
 
@@ -45,6 +49,46 @@ async def example(example: str):
     code = snippet['code'] if snippet else ""
     html = f"""<div id=\"codeArea\">\n<textarea id=\"code\" name=\"code\" rows=\"10\">{code}</textarea>\n</div>"""
     return HTMLResponse(content=html)
+  
+@app.post("/create-checkout-session")
+async def create_checkout_session_route(request: Request):
+    """HTTP endpoint to create a Stripe Checkout Session."""
+    data = await request.json()
+    success_url = request.url_for("index")
+    cancel_url = request.url_for("index")
+    session_id = create_checkout_session(
+        dollars=data.get("dollars", 0),
+        success_url=success_url,
+        cancel_url=cancel_url,
+    )
+    return JSONResponse({"sessionId": session_id})
+  
+@app.post("/credits/reset", response_class=HTMLResponse)
+async def credits_reset(request: Request):
+    """Reset the roast counter to zero and return updated HTML snippet."""
+    reset_credits()
+    remaining = get_remaining_credits()
+    html = f"""
+    <div id=\"credits\" style=\"margin: 1rem 0;\" hx-get=\"/credits\" hx-trigger=\"every 10s\" hx-swap=\"outerHTML\">
+      Roasts Remaining: <span id=\"credit-count\">{remaining}</span>
+      <button hx-post=\"/credits/update?delta=1\" hx-target=\"#credits\" hx-swap=\"outerHTML\">+1</button>
+      <button hx-post=\"/credits/update?delta=-1\" hx-target=\"#credits\" hx-swap=\"outerHTML\">-1</button>
+      <button hx-post=\"/credits/reset\" hx-target=\"#credits\" hx-swap=\"outerHTML\">Reset</button>
+    </div>
+    """
+    return HTMLResponse(content=html)
+
+@app.post("/webhook")
+async def stripe_webhook_route(request: Request):
+    """HTTP endpoint to receive Stripe webhooks."""
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+    process_webhook(
+        payload=payload,
+        sig_header=sig_header,
+        webhook_secret=os.environ.get("STRIPE_WEBHOOK_SECRET", ""),
+    )
+    return JSONResponse({"status": "success"})
 
 @app.get("/share/{clapback_id}", response_class=HTMLResponse, name="share_clapback")
 async def share_clapback(request: Request, clapback_id: int):
@@ -74,9 +118,10 @@ async def update_credits(request: Request, delta: int = 0):
     # Return updated credits HTML
     html = f"""
     <div id=\"credits\" style=\"margin: 1rem 0;\" hx-get=\"/credits\" hx-trigger=\"every 10s\" hx-swap=\"outerHTML\">
-      Credits Remaining: <span id=\"credit-count\">{remaining}</span>
+      Roasts Remaining: <span id=\"credit-count\">{remaining}</span>
       <button hx-post=\"/credits/update?delta=1\" hx-target=\"#credits\" hx-swap=\"outerHTML\">+1</button>
       <button hx-post=\"/credits/update?delta=-1\" hx-target=\"#credits\" hx-swap=\"outerHTML\">-1</button>
+      <button hx-post=\"/credits/reset\" hx-target=\"#credits\" hx-swap=\"outerHTML\">Reset</button>
     </div>
     """
     return HTMLResponse(content=html)
@@ -87,9 +132,10 @@ async def get_credits(request: Request):
     remaining = get_remaining_credits()
     html = f"""
     <div id=\"credits\" style=\"margin: 1rem 0;\" hx-get=\"/credits\" hx-trigger=\"every 10s\" hx-swap=\"outerHTML\">
-      Credits Remaining: <span id=\"credit-count\">{remaining}</span>
+      Roasts Remaining: <span id=\"credit-count\">{remaining}</span>
       <button hx-post=\"/credits/update?delta=1\" hx-target=\"#credits\" hx-swap=\"outerHTML\">+1</button>
       <button hx-post=\"/credits/update?delta=-1\" hx-target=\"#credits\" hx-swap=\"outerHTML\">-1</button>
+      <button hx-post=\"/credits/reset\" hx-target=\"#credits\" hx-swap=\"outerHTML\">Reset</button>
     </div>
     """
     return HTMLResponse(content=html)
