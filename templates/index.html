@@ -45,6 +45,11 @@
 <body>
   <div class="container">
     <h1>Roast My Code</h1>
+    <div id="credits" style="margin: 1rem 0;" hx-get="/credits" hx-trigger="every 10s" hx-swap="outerHTML">
+      Credits Remaining: <span id="credit-count">{{ credits_remaining }}</span>
+      <button hx-post="/credits/update?delta=1" hx-target="#credits" hx-swap="outerHTML">+1</button>
+      <button hx-post="/credits/update?delta=-1" hx-target="#credits" hx-swap="outerHTML">-1</button>
+    </div>
     <div class="form-section">
       <h2>Code Snippet</h2>
       <form hx-post="/roast/code-snippet-html" hx-target="#roastResult" hx-swap="innerHTML">
