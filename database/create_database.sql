@@ -17,17 +17,28 @@ create table roast_my_code.roast_style (
 create table roast_my_code.roast (
     id serial primary key,
     github_user text,
-    roast_style integer,
+    roast_style integer not null,
     create_ts timestamp default CURRENT_TIMESTAMP,
-    CONSTRAINT fk_roast_style FOREIGN KEY(id) REFERENCES roast_my_code.roast_style(id)
+    constraint fk_roast_style
+        foreign key(roast_style)
+        references roast_my_code.roast_style(id)
 );
 
 
-create table roast_my_code.clapback (
+create table roast_my_code.clapbacks (
     id serial primary key,
-    llm_response text,
-    audio_file_path text,
+    llm_response text not null,
+    audio_url text,
     open_api_cost float,
-    create_ts timestamp default CURRENT_TIMESTAMP,
-    CONSTRAINT fk_roast FOREIGN KEY(id) REFERENCES roast_my_code.roast(id)
+    create_ts timestamp default CURRENT_TIMESTAMP
 );
+-- Tables for pay-it-forward credits
+
+CREATE TABLE IF NOT EXISTS roast_my_code.payitforward_credits (
+    id INT PRIMARY KEY,
+    remaining BIGINT NOT NULL
+);
+
+INSERT INTO roast_my_code.payitforward_credits (id, remaining)
+    SELECT 1, 0
+    WHERE NOT EXISTS (SELECT 1 FROM roast_my_code.payitforward_credits WHERE id = 1);
