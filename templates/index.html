@@ -47,17 +47,35 @@
   <div class="container">
     <h1>Roast My Code</h1>
     <div id="credits" style="margin: 1rem 0;" hx-get="/credits" hx-trigger="every 10s" hx-swap="outerHTML">
-      Credits Remaining: <span id="credit-count">{{ credits_remaining }}</span>
+      Roasts Remaining: <span id="credit-count">{{ credits_remaining }}</span>
       <button hx-post="/credits/update?delta=1" hx-target="#credits" hx-swap="outerHTML">+1</button>
       <button hx-post="/credits/update?delta=-1" hx-target="#credits" hx-swap="outerHTML">-1</button>
+      <button hx-post="/credits/reset" hx-target="#credits" hx-swap="outerHTML">Reset</button>
     </div>
     <div class="form-section">
-      <h2>Buy Credits</h2>
-      <button id="buy-credits">Buy Credits</button>
+      <h2>Purchase Roasts</h2>
+      <label for="dollarAmount">Enter Dollar Amount (USD):</label>
+      <input type="number" id="dollarAmount" name="dollars" value="1" min="1" step="0.01">
+      <p>You will receive <span id="roast-count">10</span> roasts.</p>
+      <button id="buy-roasts">Pay & Buy Roasts</button>
       <script>
         const stripe = Stripe("{{ stripe_pk }}");
-        document.getElementById("buy-credits").addEventListener("click", () => {
-          fetch("/create-checkout-session", { method: "POST" })
+        const dollarInput = document.getElementById("dollarAmount");
+        const roastCount = document.getElementById("roast-count");
+        // Update roast count on input change
+        dollarInput.addEventListener("input", () => {
+          const dollars = parseFloat(dollarInput.value) || 0;
+          const roasts = Math.max(0, Math.floor(dollars * 10));
+          roastCount.innerText = roasts;
+        });
+        document.getElementById("buy-roasts").addEventListener("click", () => {
+          const dollars = parseFloat(dollarInput.value) || 0;
+          const roasts = Math.max(0, Math.floor(dollars * 10));
+          fetch("/create-checkout-session", {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dollars: dollars, roasts: roasts })
+          })
             .then(res => res.json())
             .then(data => stripe.redirectToCheckout({ sessionId: data.sessionId }));
         });

@@ -66,8 +66,6 @@ Add the following variables to your `.env` file (or export in your shell):
 # Stripe API Keys (get these from your Stripe Dashboard)
 STRIPE_SECRET_KEY=sk_test_your_secret_key_here
 STRIPE_PUBLISHABLE_KEY=pk_test_your_publishable_key_here
-# The Price ID you created in Stripe (e.g. one-time product price with metadata `credits`)
-STRIPE_PRICE_ID=price_1ABCxyz...
 # Your Stripe webhook signing secret (from Developers → Webhooks → your endpoint)
 STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
 ```
@@ -109,13 +107,10 @@ Use the Stripe CLI to forward events to your local FastAPI server:
 stripe listen --forward-to localhost:5030/webhook
 ```
 This will print out a webhook signing secret (`whsec_...`) and forward `checkout.session.completed` events to `http://localhost:5030/webhook`.
-
-### 4) Create a Stripe Price with Credits Metadata
-1. In the Stripe Dashboard, go to **Products** → your product or create a new one.
-2. Under **Pricing**, create a Price (e.g. $5 USD).
-3. In the **Metadata** section, add a key `credits` with the integer number of credits this purchase provides (e.g. `10`).
-
-### 5) Testing Purchases
+### 4) Testing Purchases
+1. Start your FastAPI server (default at port 5030).
+2. Open the web UI, enter a dollar amount and click **Pay & Buy Roasts**, then complete the test checkout.
+3. After payment, the CLI will forward the webhook and your local DB will increment the roast counter.
 1. Start your FastAPI server (default at port 5030).
 2. Open the web UI, click **Buy Credits**, and complete the test checkout.
 3. After payment, the CLI will forward the webhook and your local DB will increment the credit counter.

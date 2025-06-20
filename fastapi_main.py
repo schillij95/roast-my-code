@@ -7,7 +7,7 @@ import os
 from fastapi.staticfiles import StaticFiles
 
 from utils.speech import pipeline, cleanup_prompt, generate_tts_audio
-from utils.db import insert_clapback, get_clapback, get_remaining_credits, increment_credits, decrement_credits
+from utils.db import insert_clapback, get_clapback, get_remaining_credits, increment_credits, decrement_credits, reset_credits
 
 from config import EXAMPLE_SNIPPETS, ROAST_STYLES, VOICES, DEFAULT_VOICE
 from utils.parser import parse_full_github_user, parse_repo
@@ -33,7 +33,6 @@ async def index(request: Request):
     credits_remaining = get_remaining_credits()
     # Pass Stripe publishable key and price ID for Checkout
     stripe_pk = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
-    stripe_price_id = os.environ.get("STRIPE_PRICE_ID", "")
     return templates.TemplateResponse("index.html", {
         "request": request,
         "examples": EXAMPLE_SNIPPETS,
@@ -43,7 +42,6 @@ async def index(request: Request):
         "default_voice": DEFAULT_VOICE,
         "credits_remaining": credits_remaining,
         "stripe_pk": stripe_pk,
-        "stripe_price_id": stripe_price_id,
     })
 
 
@@ -56,19 +54,54 @@ async def example(example: str):
   
 @app.post("/create-checkout-session")
 async def create_checkout_session(request: Request):
-    """Create a Stripe Checkout session to purchase credits."""
-    # Must have secret key and price ID
-    price_id = os.environ.get("STRIPE_PRICE_ID")
-    if not stripe.api_key or not price_id:
+    """Create a Stripe Checkout session to purchase roasts based on dollar amount."""
+    if not stripe.api_key:
         raise HTTPException(status_code=500, detail="Stripe is not configured.")
+    data = await request.json()
+    try:
+        dollars = float(data.get("dollars", 0))
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid dollar amount")
+    if dollars <= 0:
+        raise HTTPException(status_code=400, detail="Dollar amount must be greater than 0")
+    # Compute roasts: 1 USD buys 10 roasts
+    roasts = int(dollars * 10)
+    # Build dynamic price data
+    amount_cents = int(dollars * 100)
     session = stripe.checkout.Session.create(
         payment_method_types=["card"],
-        line_items=[{"price": price_id, "quantity": 1}],
+        line_items=[{
+            "price_data": {
+                "currency": "usd",
+                "unit_amount": amount_cents,
+                "product_data": {
+                    "name": f"{roasts} Roasts",
+                    "description": f"Be the good guy. Buy {roasts} roasts for ${dollars:.2f}"
+                }
+            },
+            "quantity": 1
+        }],
         mode="payment",
         success_url=request.url_for("index"),
         cancel_url=request.url_for("index"),
+        metadata={"roasts": roasts}
     )
     return JSONResponse({"sessionId": session.id})
+  
+@app.post("/credits/reset", response_class=HTMLResponse)
+async def credits_reset(request: Request):
+    """Reset the roast counter to zero and return updated HTML snippet."""
+    reset_credits()
+    remaining = get_remaining_credits()
+    html = f"""
+    <div id=\"credits\" style=\"margin: 1rem 0;\" hx-get=\"/credits\" hx-trigger=\"every 10s\" hx-swap=\"outerHTML\">
+      Roasts Remaining: <span id=\"credit-count\">{remaining}</span>
+      <button hx-post=\"/credits/update?delta=1\" hx-target=\"#credits\" hx-swap=\"outerHTML\">+1</button>
+      <button hx-post=\"/credits/update?delta=-1\" hx-target=\"#credits\" hx-swap=\"outerHTML\">-1</button>
+      <button hx-post=\"/credits/reset\" hx-target=\"#credits\" hx-swap=\"outerHTML\">Reset</button>
+    </div>
+    """
+    return HTMLResponse(content=html)
 
 @app.post("/webhook")
 async def stripe_webhook(request: Request):
@@ -84,16 +117,10 @@ async def stripe_webhook(request: Request):
     # Handle checkout session completion
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
-        # Retrieve session with expanded line items and price metadata
-        sess = stripe.checkout.Session.retrieve(
-            session["id"], expand=["line_items.data.price"]
-        )
-        items = sess["line_items"]["data"]
-        if items:
-            price_obj = items[0]["price"]
-            credits = int(price_obj.get("metadata", {}).get("credits", 0))
-            if credits > 0:
-                increment_credits(credits)
+        # Read roasts count from session metadata
+        roasts = int(session.get("metadata", {}).get("roasts", 0))
+        if roasts > 0:
+            increment_credits(roasts)
     return JSONResponse({"status": "success"})
 
 @app.get("/share/{clapback_id}", response_class=HTMLResponse, name="share_clapback")
@@ -124,9 +151,10 @@ async def update_credits(request: Request, delta: int = 0):
     # Return updated credits HTML
     html = f"""
     <div id=\"credits\" style=\"margin: 1rem 0;\" hx-get=\"/credits\" hx-trigger=\"every 10s\" hx-swap=\"outerHTML\">
-      Credits Remaining: <span id=\"credit-count\">{remaining}</span>
+      Roasts Remaining: <span id=\"credit-count\">{remaining}</span>
       <button hx-post=\"/credits/update?delta=1\" hx-target=\"#credits\" hx-swap=\"outerHTML\">+1</button>
       <button hx-post=\"/credits/update?delta=-1\" hx-target=\"#credits\" hx-swap=\"outerHTML\">-1</button>
+      <button hx-post=\"/credits/reset\" hx-target=\"#credits\" hx-swap=\"outerHTML\">Reset</button>
     </div>
     """
     return HTMLResponse(content=html)
@@ -137,9 +165,10 @@ async def get_credits(request: Request):
     remaining = get_remaining_credits()
     html = f"""
     <div id=\"credits\" style=\"margin: 1rem 0;\" hx-get=\"/credits\" hx-trigger=\"every 10s\" hx-swap=\"outerHTML\">
-      Credits Remaining: <span id=\"credit-count\">{remaining}</span>
+      Roasts Remaining: <span id=\"credit-count\">{remaining}</span>
       <button hx-post=\"/credits/update?delta=1\" hx-target=\"#credits\" hx-swap=\"outerHTML\">+1</button>
       <button hx-post=\"/credits/update?delta=-1\" hx-target=\"#credits\" hx-swap=\"outerHTML\">-1</button>
+      <button hx-post=\"/credits/reset\" hx-target=\"#credits\" hx-swap=\"outerHTML\">Reset</button>
     </div>
     """
     return HTMLResponse(content=html)
