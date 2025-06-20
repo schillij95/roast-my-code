@@ -51,3 +51,58 @@ def get_clapback(clapback_id: int):
             {"id": clapback_id},
         ).mappings().first()
     return dict(row) if row else None
+  
+# Initialize pay-it-forward credits table
+with engine.begin() as conn:
+    conn.execute(
+        text(
+            """
+            CREATE TABLE IF NOT EXISTS payitforward_credits (
+                id INT PRIMARY KEY,
+                remaining BIGINT NOT NULL
+            )
+            """
+        )
+    )
+    conn.execute(
+        text(
+            """
+            INSERT INTO payitforward_credits (id, remaining)
+            SELECT 1, 0
+            WHERE NOT EXISTS (SELECT 1 FROM payitforward_credits WHERE id = 1)
+            """
+        )
+    )
+
+def get_remaining_credits() -> int:
+    """Get the current number of remaining credits."""
+    with engine.connect() as conn:
+        result = conn.execute(
+            text("SELECT remaining FROM payitforward_credits WHERE id = 1")
+        ).scalar_one_or_none()
+    return int(result) if result is not None else 0
+
+def increment_credits(amount: int = 1) -> int:
+    """Increase credits by the given amount and return new total."""
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO payitforward_credits (id, remaining) VALUES (1, :amt) "
+                "ON CONFLICT (id) DO UPDATE SET remaining = payitforward_credits.remaining + :amt"
+            ),
+            {"amt": amount},
+        )
+    return get_remaining_credits()
+
+def decrement_credits() -> bool:
+    """Attempt to decrement a credit. Returns True if successful, False if none left."""
+    with engine.begin() as conn:
+        row = conn.execute(
+            text("SELECT remaining FROM payitforward_credits WHERE id = 1 FOR UPDATE")
+        ).scalar_one_or_none()
+        if row is None or row <= 0:
+            return False
+        conn.execute(
+            text("UPDATE payitforward_credits SET remaining = remaining - 1 WHERE id = 1")
+        )
+        return True

@@ -6,7 +6,7 @@ import os
 from fastapi.staticfiles import StaticFiles
 
 from utils.speech import pipeline, cleanup_prompt, generate_tts_audio
-from utils.db import insert_clapback, get_clapback
+from utils.db import insert_clapback, get_clapback, get_remaining_credits, increment_credits, decrement_credits
 
 from config import EXAMPLE_SNIPPETS, ROAST_STYLES, VOICES, DEFAULT_VOICE
 from utils.parser import parse_full_github_user, parse_repo
@@ -26,13 +26,16 @@ async def index(request: Request):
     models = get_model_names()
     # Pass only style names to the template; descriptions are applied server-side
     roast_styles = [r['name'] for r in ROAST_STYLES]
+    # Fetch remaining pay-it-forward credits
+    credits_remaining = get_remaining_credits()
     return templates.TemplateResponse("index.html", {
         "request": request,
         "examples": EXAMPLE_SNIPPETS,
         "models": models,
         "roast_styles": roast_styles,
         "voices": VOICES,
-        "default_voice": DEFAULT_VOICE
+        "default_voice": DEFAULT_VOICE,
+        "credits_remaining": credits_remaining,
     })
 
 
@@ -49,6 +52,47 @@ async def share_clapback(request: Request, clapback_id: int):
     if not cb:
         return HTMLResponse(content="Clapback not found", status_code=404)
     return templates.TemplateResponse("share.html", {"request": request, "clapback": cb})
+  
+@app.post("/credits/update", response_class=HTMLResponse)
+async def update_credits(request: Request, delta: int = 0):
+    """Adjust the pay-it-forward credit counter by delta and return updated HTML snippet."""
+    # Handle delta from query string (?delta=1 or -1)
+    try:
+        # If delta not provided or invalid, default 0
+        delta = int(request.query_params.get('delta', delta))
+    except ValueError:
+        delta = 0
+    # Apply increment or decrement
+    if delta > 0:
+        increment_credits(delta)
+    elif delta < 0:
+        # For negative, attempt to decrement that many times
+        for _ in range(abs(delta)):
+            if not decrement_credits():
+                break
+    remaining = get_remaining_credits()
+    # Return updated credits HTML
+    html = f"""
+    <div id=\"credits\" style=\"margin: 1rem 0;\" hx-get=\"/credits\" hx-trigger=\"every 10s\" hx-swap=\"outerHTML\">
+      Credits Remaining: <span id=\"credit-count\">{remaining}</span>
+      <button hx-post=\"/credits/update?delta=1\" hx-target=\"#credits\" hx-swap=\"outerHTML\">+1</button>
+      <button hx-post=\"/credits/update?delta=-1\" hx-target=\"#credits\" hx-swap=\"outerHTML\">-1</button>
+    </div>
+    """
+    return HTMLResponse(content=html)
+  
+@app.get("/credits", response_class=HTMLResponse)
+async def get_credits(request: Request):
+    """Return the current credits HTML snippet for periodic polling."""
+    remaining = get_remaining_credits()
+    html = f"""
+    <div id=\"credits\" style=\"margin: 1rem 0;\" hx-get=\"/credits\" hx-trigger=\"every 10s\" hx-swap=\"outerHTML\">
+      Credits Remaining: <span id=\"credit-count\">{remaining}</span>
+      <button hx-post=\"/credits/update?delta=1\" hx-target=\"#credits\" hx-swap=\"outerHTML\">+1</button>
+      <button hx-post=\"/credits/update?delta=-1\" hx-target=\"#credits\" hx-swap=\"outerHTML\">-1</button>
+    </div>
+    """
+    return HTMLResponse(content=html)
 
 @app.post("/roast/code-snippet-html", response_class=HTMLResponse)
 async def roast_code_snippet(
@@ -60,6 +104,9 @@ async def roast_code_snippet(
     tts: str = Form(None),
     voice: str = Form(DEFAULT_VOICE)
 ):
+    # Enforce pay-it-forward credit counter
+    if not decrement_credits():
+        return HTMLResponse(content="<div style='color:red;'>Out of credits. Please add more credits to continue.</div>", status_code=402)
     detailed_bool = bool(detailed)
     # include the human-readable description in the roast style
     style_def = next((r for r in ROAST_STYLES if r['name'] == roast_style), None)
@@ -94,6 +141,9 @@ async def roast_github_profile(
     tts: str = Form(None),
     voice: str = Form(DEFAULT_VOICE)
 ):
+    # Enforce pay-it-forward credit counter
+    if not decrement_credits():
+        return HTMLResponse(content="<div style='color:red;'>Out of credits. Please add more credits to continue.</div>", status_code=402)
     detailed_bool = bool(detailed)
     if not repository:
         code_dict = parse_full_github_user(profile, depth=1 if detailed_bool else 0)
