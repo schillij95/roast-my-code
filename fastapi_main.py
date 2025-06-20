@@ -85,6 +85,7 @@ async def roast_code_snippet(
     # include the human-readable description in the roast style
     style_def = next((r for r in ROAST_STYLES if r['name'] == roast_style), None)
     roast_style_full = f"{style_def['name']} ({style_def['description']})" if style_def else roast_style
+    # generate roast via utils.llm (uses OpenAI or Ollama under the hood)
     roast_text = generate_code_roast(
         code,
         roast_style_full,
@@ -125,6 +126,7 @@ async def roast_github_profile(
     # include the human-readable description in the roast style
     style_def = next((r for r in ROAST_STYLES if r['name'] == roast_style), None)
     roast_style_full = f"{style_def['name']} ({style_def['description']})" if style_def else roast_style
+    # generate roast via utils.llm (uses OpenAI or Ollama under the hood)
     roast_text = generate_code_roast(
         summary_text,
         roast_style_full,

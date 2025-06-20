@@ -27,6 +27,52 @@ def get_llm_response(prompt: str, stream=True, model=None):
     Returns:
         generator: A generator yielding response chunks from the LLM.
     """
+    # If OpenAI API key is set, use GPT-4.1 nano via OpenAI Python >=1.0.0
+    # If OpenAI API key is set, use GPT-4.1 nano via OpenAI Python >=1.0.0
+    if os.getenv("OPENAI_API_KEY"):
+        try:
+            import openai
+        except ImportError:
+            raise RuntimeError("OPENAI_API_KEY set but openai package not installed")
+        openai.api_key = os.environ["OPENAI_API_KEY"]
+        # Debug: show the outgoing prompt
+        print(f"[LLM][OpenAI] Prompt: {prompt}")
+        if stream:
+            resp = openai.chat.completions.create(
+                model="gpt-4.1-nano",
+                messages=[{"role": "user", "content": prompt}],
+                stream=True,
+            )
+            # Debug: streaming response object
+            print(f"[LLM][OpenAI] Streaming response object: {resp}")
+            def event_stream():
+                for chunk in resp:
+                    choice = chunk.choices[0]
+                    delta = getattr(choice, "delta", None)
+                    content = getattr(delta, "content", None) if delta is not None else None
+                    if content:
+                        # Debug: chunk content
+                        print(f"[LLM][OpenAI] Chunk content: {content}")
+                        yield content
+            return event_stream()
+        else:
+            resp = openai.chat.completions.create(
+                model="gpt-4.1-nano",
+                messages=[{"role": "user", "content": prompt}],
+            )
+            # Debug: raw full response
+            print(f"[LLM][OpenAI] Raw response: {resp}")
+            try:
+                choice = resp.choices[0]
+                message = getattr(choice, "message", None)
+                content = getattr(message, "content", "") if message is not None else ""
+                # Debug: parsed content
+                print(f"[LLM][OpenAI] Parsed content: {content}")
+                return content
+            except Exception as e:
+                print(f"[LLM][OpenAI] Error parsing response: {e}")
+                return ""
+    # Fallback to Ollama if no OpenAI key
     if model is None:
         model_name = st.session_state.get('model')
         if not model_name:
@@ -34,11 +80,10 @@ def get_llm_response(prompt: str, stream=True, model=None):
     else:
         model_name = model
     result = ollama.generate(model=model_name, prompt=prompt, stream=stream)
-
     if stream:
-        return result  # generator
+        return result
     else:
-        return result['response']  # full string
+        return result['response']
 
 def generate_code_roast(code: str, roast_style: str, detailed: bool = False, type: str = "code snippet", model=None, stream=True):
     """
