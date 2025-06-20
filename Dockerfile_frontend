@@ -16,6 +16,7 @@ RUN addgroup --system app && adduser --system --group app
 ENV HOME=/home/app
 ENV APP_HOME=/home/app/web
 RUN mkdir -p $APP_HOME
+RUN mkdir -p $APP_HOME/tts
 
 WORKDIR $APP_HOME
 
@@ -29,17 +30,18 @@ RUN pip install --no-cache /wheels/*
 RUN python3 -m spacy download en_core_web_sm
 
 RUN mkdir -p $HOME/.local
-RUN mkdir -p $HOME/.streamlit
 RUN mkdir -p $HOME/.cache/huggingface
 
 COPY *.py ${APP_HOME}
-COPY utils/ ${APP_HOME}/utils/
+ADD utils/ ${APP_HOME}/utils
+# ADD static/ ${APP_HOME}/static
+ADD templates/ ${APP_HOME}/templates
+
 ENV PORT=5030
 EXPOSE 5030
 
 RUN chown -R app:app $APP_HOME
 RUN chown -R app:app $HOME/.local
-RUN chown -R app:app $HOME/.streamlit
 RUN chown -R app:app $HOME/.cache/huggingface
 
 USER app

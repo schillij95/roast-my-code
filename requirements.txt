@@ -9,3 +9,5 @@ uvicorn[standard]>=0.20.0
 jinja2
 python-multipart
 python-dotenv
+sqlalchemy>=2.0
+psycopg2-binary
