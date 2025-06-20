@@ -58,7 +58,8 @@ streamlit run main.py
   
 ## Stripe Integration
 
-We support purchasing "pay-it-forward" credits via Stripe Checkout.  Credits are used to generate code roasts.
+We support purchasing "pay-it-forward" credits (roasts) via Stripe Checkout.  Credits are used to generate code roasts.
+Before you begin, register for a free Stripe account at https://dashboard.stripe.com/register. In the Dashboard, toggle “Viewing test data” (top right) to work in Test mode.
 
 ### 1) Environment Variables
 Add the following variables to your `.env` file (or export in your shell):
@@ -111,6 +112,12 @@ This will print out a webhook signing secret (`whsec_...`) and forward `checkout
 1. Start your FastAPI server (default at port 5030).
 2. Open the web UI, enter a dollar amount and click **Pay & Buy Roasts**, then complete the test checkout.
 3. After payment, the CLI will forward the webhook and your local DB will increment the roast counter.
+  
+#### Test Cards
+Use Stripe’s Test mode (Dashboard toggle “Viewing test data”).  In Checkout, try:
+- 4242 4242 4242 4242 — successful payment
+- 4000 0000 0000 9995 — generic decline
+- 4000 0000 0000 3220 — requires 3D Secure authentication
 1. Start your FastAPI server (default at port 5030).
 2. Open the web UI, click **Buy Credits**, and complete the test checkout.
 3. After payment, the CLI will forward the webhook and your local DB will increment the credit counter.
