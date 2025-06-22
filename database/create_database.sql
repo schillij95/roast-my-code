@@ -27,10 +27,14 @@ create table roast_my_code.roast (
 
 create table roast_my_code.clapback (
     id serial primary key,
+    roast_id integer,
     llm_response text not null,
     audio_url text,
     open_api_cost float,
-    create_ts timestamp default CURRENT_TIMESTAMP
+    create_ts timestamp default CURRENT_TIMESTAMP,
+    CONSTRAINT fk_roast 
+        FOREIGN KEY(roast_id) 
+        REFERENCES roast_my_code.roast(id)
 );
 
 
