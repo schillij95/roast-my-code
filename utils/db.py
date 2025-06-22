@@ -13,18 +13,42 @@ engine = create_engine(DATABASE_URL, echo=False, future=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-def insert_clapback(llm_response: str, audio_url: str = None) -> int:
+def get_roast_styles():
+    with SessionLocal() as session:
+        result = session.execute(
+            text(
+                "select * from roast_my_code.roast_style"
+            ),
+        )
+        return [dict(row._mapping) for row in result.fetchall()]
+
+
+def insert_roast(roast_style, code: str = None, github_user: str = None, github_repository: str = None) -> int:
+    with SessionLocal() as session:
+        result = session.execute(
+            text(
+                "INSERT INTO roast_my_code.roast (roast_style, code, github_user, github_repository)"
+                " VALUES (:roast_style, :code, :github_user, :github_repository) RETURNING id"
+            ),
+            {"roast_style": roast_style, "code": code, "github_user": github_user, "github_repository": github_repository},
+        )
+        session.commit()
+        return result.scalar_one()
+
+
+def insert_clapback(roast_id: int, llm_response: str, audio_url: str = None) -> int:
     """Insert a new clapback and return its ID."""
     with SessionLocal() as session:
         result = session.execute(
             text(
-                "INSERT INTO roast_my_code.clapback (llm_response, audio_url)"
-                " VALUES (:llm_response, :audio_url) RETURNING id"
+                "INSERT INTO roast_my_code.clapback (roast_id, llm_response, audio_url)"
+                " VALUES (:roast_id, :llm_response, :audio_url) RETURNING id"
             ),
-            {"llm_response": llm_response, "audio_url": audio_url},
+            {"roast_id": roast_id, "llm_response": llm_response, "audio_url": audio_url},
         )
         session.commit()
         return result.scalar_one()
+
 
 def get_clapback(clapback_id: int):
     """Retrieve a clapback by ID, returning a dict or None."""
@@ -46,6 +70,20 @@ def get_remaining_credits() -> int:
             text("SELECT remaining FROM roast_my_code.payitforward_credits WHERE id = 1")
         ).scalar_one_or_none()
     return int(result) if result is not None else 0
+
+
+def get_latest_roasts():
+    with engine.connect() as conn:
+        result = conn.execute(
+            text("""
+                SELECT r.*, c.llm_response
+                 FROM roast_my_code.roast r
+                 INNER JOIN roast_my_code.clapback c on c.id=r.id
+                 ORDER BY create_ts DESC FETCH FIRST 3 ROWS ONLY
+            """)
+        )
+    return result.fetchall()
+
 
 def increment_credits(amount: int = 1) -> int:
     """Increase credits by the given amount and return new total."""

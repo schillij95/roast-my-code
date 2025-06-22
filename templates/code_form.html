@@ -1,0 +1,41 @@
+<div class="form-section">
+      <h2>Code Snippet</h2>
+      <form hx-post="/roast/code-snippet-html" hx-target="#roastResult" hx-swap="innerHTML">
+        <label for="exampleSelect">Example Snippets:</label>
+        <div class="select">
+            <select id="exampleSelect" name="example" hx-get="/example" hx-target="#codeArea" hx-swap="outerHTML">
+            {% for ex in examples %}
+            <option value="{{ ex.title }}">{{ ex.title }}</option>
+            {% endfor %}
+            </select>
+        </div>
+        <div id="codeArea">
+          <textarea id="code" class="textarea" name="code" rows="10">{{ examples[0].code }}</textarea>
+        </div>
+        <label for="modelSelect">Model:</label>
+        <div class="select">
+        <select id="modelSelect" name="model">
+          {% for m in models %}
+          <option value="{{ m }}">{{ m }}</option>
+          {% endfor %}
+        </select>
+        </div>
+        <label for="styleSelect">Roast Style:</label>
+        <div class="select">
+        <select id="styleSelect" name="roast_style">
+          {% for style in roast_styles %}
+          <option value="{{ style['id'] }}">{{ style['name'] }}</option>
+          {% endfor %}
+        </select>
+        </div>
+        <label><input type="checkbox" name="detailed"> Detailed Roast</label>
+        <label><input type="checkbox" name="tts"> Enable Voice Output</label>
+        <label for="voiceSelect">Voice:</label>
+        <select id="voiceSelect" name="voice">
+          {% for v in voices %}
+          <option value="{{ v }}" {% if v == default_voice %}selected{% endif %}>{{ v }}</option>
+          {% endfor %}
+        </select>
+        <button class="button is-link" type="submit">Roast Code</button>
+      </form>
+    </div>

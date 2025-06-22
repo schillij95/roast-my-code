@@ -6,10 +6,10 @@ import os
 from fastapi.staticfiles import StaticFiles
 
 from utils.speech import pipeline, cleanup_prompt, generate_tts_audio
-from utils.db import insert_clapback, get_clapback, get_remaining_credits, increment_credits, decrement_credits, reset_credits
+from utils.db import insert_clapback, get_clapback, get_remaining_credits, increment_credits, decrement_credits, reset_credits, get_latest_roasts, insert_roast, get_roast_styles
 from utils.stripe import create_checkout_session, process_webhook
 
-from config import EXAMPLE_SNIPPETS, ROAST_STYLES, VOICES, DEFAULT_VOICE
+from config import EXAMPLE_SNIPPETS, VOICES, DEFAULT_VOICE
 from utils.parser import parse_full_github_user, parse_repo
 from utils.summarize_git import critique_code_dict
 from utils.llm import generate_code_roast, get_model_names
@@ -26,11 +26,15 @@ if "OLLAMA_HOST" in os.environ:
 async def index(request: Request):
     models = get_model_names()
     # Pass only style names to the template; descriptions are applied server-side
+    ROAST_STYLES = get_roast_styles()
     roast_styles = [r['name'] for r in ROAST_STYLES]
     # Fetch remaining pay-it-forward credits
     credits_remaining = get_remaining_credits()
     # Pass Stripe publishable key and price ID for Checkout
     stripe_pk = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
+
+    latest_roasts = get_latest_roasts()
+
     return templates.TemplateResponse("index.html", {
         "request": request,
         "examples": EXAMPLE_SNIPPETS,
@@ -40,6 +44,32 @@ async def index(request: Request):
         "default_voice": DEFAULT_VOICE,
         "credits_remaining": credits_remaining,
         "stripe_pk": stripe_pk,
+        "latest_roasts": latest_roasts,
+    })
+
+
+@app.get("/roast", response_class=HTMLResponse)
+async def index(request: Request):
+    models = get_model_names()
+    # Pass only style names to the template; descriptions are applied server-side
+    ROAST_STYLES = get_roast_styles()
+    # Fetch remaining pay-it-forward credits
+    credits_remaining = get_remaining_credits()
+    # Pass Stripe publishable key and price ID for Checkout
+    stripe_pk = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
+
+    latest_roasts = get_latest_roasts()
+
+    return templates.TemplateResponse("roast.html", {
+        "request": request,
+        "examples": EXAMPLE_SNIPPETS,
+        "models": models,
+        "roast_styles": ROAST_STYLES,
+        "voices": VOICES,
+        "default_voice": DEFAULT_VOICE,
+        "credits_remaining": credits_remaining,
+        "stripe_pk": stripe_pk,
+        "latest_roasts": latest_roasts,
     })
 
 
@@ -50,6 +80,7 @@ async def example(example: str):
     html = f"""<div id=\"codeArea\">\n<textarea id=\"code\" name=\"code\" rows=\"10\">{code}</textarea>\n</div>"""
     return HTMLResponse(content=html)
   
+
 @app.post("/create-checkout-session")
 async def create_checkout_session_route(request: Request):
     """HTTP endpoint to create a Stripe Checkout Session."""
@@ -145,7 +176,7 @@ async def roast_code_snippet(
     request: Request,
     code: str = Form(...),
     model: str = Form(...),
-    roast_style: str = Form(...),
+    roast_style: int = Form(...),
     detailed: str = Form(None),
     tts: str = Form(None),
     voice: str = Form(DEFAULT_VOICE)
@@ -153,10 +184,16 @@ async def roast_code_snippet(
     # Enforce pay-it-forward credit counter
     if not decrement_credits():
         return HTMLResponse(content="<div style='color:red;'>Out of credits. Please add more credits to continue.</div>", status_code=402)
+    
+    roast_id = insert_roast(roast_style, code, None, None)
+
     detailed_bool = bool(detailed)
     # include the human-readable description in the roast style
-    style_def = next((r for r in ROAST_STYLES if r['name'] == roast_style), None)
-    roast_style_full = f"{style_def['name']} ({style_def['description']})" if style_def else roast_style
+    ROAST_STYLES = get_roast_styles()
+    roast_style_full = next((f"{r['name']} ({r['llm_description']})" for r in ROAST_STYLES if r['id'] == roast_style), None)
+
+    print(roast_style_full, roast_style_full)
+
     # generate roast via utils.llm (uses OpenAI or Ollama under the hood)
     roast_text = generate_code_roast(
         code,
@@ -171,10 +208,11 @@ async def roast_code_snippet(
     if tts:
         audio_url = generate_tts_audio(roast_text, voice)
         html += f"<audio controls autoplay src=\"{audio_url}\"></audio>"
-    clapback_id = insert_clapback(roast_text, audio_url)
+    clapback_id = insert_clapback(roast_id, roast_text, audio_url)
     share_url = request.url_for("share_clapback", clapback_id=clapback_id)
     html += f"<div><a href=\"{share_url}\" target=\"_blank\">Share this clapback</a></div>"
     return HTMLResponse(content=html)
+
 
 @app.post("/roast/github-profile-html", response_class=HTMLResponse)
 async def roast_github_profile(
@@ -182,7 +220,7 @@ async def roast_github_profile(
     profile: str = Form(...),
     repository: str = Form(""),
     model: str = Form(...),
-    roast_style: str = Form(...),
+    roast_style: int = Form(...),
     detailed: str = Form(None),
     tts: str = Form(None),
     voice: str = Form(DEFAULT_VOICE)
@@ -190,6 +228,9 @@ async def roast_github_profile(
     # Enforce pay-it-forward credit counter
     if not decrement_credits():
         return HTMLResponse(content="<div style='color:red;'>Out of credits. Please add more credits to continue.</div>", status_code=402)
+    
+    roast_id = insert_roast(roast_style, None, profile, repository)
+
     detailed_bool = bool(detailed)
     if not repository:
         code_dict = parse_full_github_user(profile, depth=1 if detailed_bool else 0)
@@ -199,8 +240,10 @@ async def roast_github_profile(
     summary_text = "\n".join(f"{k}: {v}" for k, v in summary_dict.items())
     summary_text += f"\nSummary for the user {profile}:"
     # include the human-readable description in the roast style
-    style_def = next((r for r in ROAST_STYLES if r['name'] == roast_style), None)
+    ROAST_STYLES = get_roast_styles()
+    style_def = next((r["llm_description"] for r in ROAST_STYLES if r['name'] == roast_style), None)
     roast_style_full = f"{style_def['name']} ({style_def['description']})" if style_def else roast_style
+
     # generate roast via utils.llm (uses OpenAI or Ollama under the hood)
     roast_text = generate_code_roast(
         summary_text,
@@ -215,7 +258,7 @@ async def roast_github_profile(
     if tts:
         audio_url = generate_tts_audio(roast_text, voice)
         html += f"<audio controls autoplay src=\"{audio_url}\"></audio>"
-    clapback_id = insert_clapback(roast_text, audio_url)
+    clapback_id = insert_clapback(roast_id, roast_text, audio_url)
     share_url = request.url_for("share_clapback", clapback_id=clapback_id)
     html += f"<div><a href=\"{share_url}\" target=\"_blank\">Share this clapback</a></div>"
     return HTMLResponse(content=html)

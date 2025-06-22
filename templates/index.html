@@ -1,153 +1,58 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Roast My Code</title>
-  <script src="https://unpkg.com/htmx.org@1.9.2"></script>
-  <script src="https://js.stripe.com/v3/"></script>
-  <style>
-    :root {
-      --bg: #0e1117;
-      --fg: #c9d1d9;
-      --accent: #58a6ff;
-      --form-bg: #161b22;
-      --border: #30363d;
-    }
-    * { box-sizing: border-box; }
-    body { background: var(--bg); color: var(--fg); font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; }
-    .container { max-width: 900px; margin: 2rem auto; padding: 1rem; }
-    h1 { color: var(--accent); margin-bottom: 1rem; text-align: center; }
-    h2 { color: var(--accent); margin-top: 0; }
-    .form-section { background: var(--form-bg); padding: 1rem; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 2rem; }
-    label { display: block; margin-top: 1rem; font-weight: 500; }
-    select, textarea, input[type="text"], button { width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border); background: var(--form-bg); color: var(--fg); margin-top: 0.5rem; }
-    input[type="checkbox"] { margin-right: 0.5rem; }
-    button { background: var(--accent); color: var(--bg); border: none; cursor: pointer; font-size: 1rem; }
-    button:hover { opacity: 0.9; }
-    #roastResult {
-      background: var(--form-bg);
-      padding: 1rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      max-height: 60vh;
-      overflow-y: auto;
-    }
-    /* Wrap text within <pre> and break long lines */
-    #roastResult pre {
-      white-space: pre-wrap;       /* Preserve whitespace but allow wrapping */
-      overflow-wrap: break-word;   /* Break long words */
-      word-break: break-all;       /* Break at any character if needed */
-      font-family: monospace;
-      margin: 0;
-    }
-    hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>Roast My Code</h1>
-    <div id="credits" style="margin: 1rem 0;" hx-get="/credits" hx-trigger="every 10s" hx-swap="outerHTML">
-      Roasts Remaining: <span id="credit-count">{{ credits_remaining }}</span>
-      <button hx-post="/credits/update?delta=1" hx-target="#credits" hx-swap="outerHTML">+1</button>
-      <button hx-post="/credits/update?delta=-1" hx-target="#credits" hx-swap="outerHTML">-1</button>
-      <button hx-post="/credits/reset" hx-target="#credits" hx-swap="outerHTML">Reset</button>
+{% extends "base.html" %}
+
+{% block content %}
+
+  <section class="hero is-small is-roast">
+    <div class="hero-body">
+      <div class="container has-text-centered">
+        <h1 class="title is-1">🔥 Roast My Code 🔥</h1>
+        <h2 class="subtitle is-4">
+          Your code isn't safe. Submit it and let the flames begin.
+        </h2>
+        <a href="/roast" class="button is-danger is-medium mt-4">Submit Your Code</a>
+      </div>
     </div>
-    <div class="form-section">
-      <h2>Purchase Roasts</h2>
-      <label for="dollarAmount">Enter Dollar Amount (USD):</label>
-      <input type="number" id="dollarAmount" name="dollars" value="1" min="1" step="0.01">
-      <p>You will receive <span id="roast-count">10</span> roasts.</p>
-      <button id="buy-roasts">Pay & Buy Roasts</button>
-      <script>
-        const stripe = Stripe("{{ stripe_pk }}");
-        const dollarInput = document.getElementById("dollarAmount");
-        const roastCount = document.getElementById("roast-count");
-        // Update roast count on input change
-        dollarInput.addEventListener("input", () => {
-          const dollars = parseFloat(dollarInput.value) || 0;
-          const roasts = Math.max(0, Math.floor(dollars * 10));
-          roastCount.innerText = roasts;
-        });
-        document.getElementById("buy-roasts").addEventListener("click", () => {
-          const dollars = parseFloat(dollarInput.value) || 0;
-          const roasts = Math.max(0, Math.floor(dollars * 10));
-          fetch("/create-checkout-session", {
-            method: "POST",
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dollars: dollars, roasts: roasts })
-          })
-            .then(res => res.json())
-            .then(data => stripe.redirectToCheckout({ sessionId: data.sessionId }));
-        });
-      </script>
-    </div>
-    <div class="form-section">
-      <h2>Code Snippet</h2>
-      <form hx-post="/roast/code-snippet-html" hx-target="#roastResult" hx-swap="innerHTML">
-        <label for="exampleSelect">Example Snippets:</label>
-        <select id="exampleSelect" name="example" hx-get="/example" hx-target="#codeArea" hx-swap="outerHTML">
-          {% for ex in examples %}
-          <option value="{{ ex.title }}">{{ ex.title }}</option>
-          {% endfor %}
-        </select>
-        <div id="codeArea">
-          <textarea id="code" name="code" rows="10">{{ examples[0].code }}</textarea>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <h3 class="title is-3 has-text-centered">Latest Roasts</h3>
+
+        <div class="columns is-multiline">
+            {% for roast in latest_roasts %}
+            <div class="column is-12-mobile is-6-tablet is-4-desktop">
+                <div class="card has-background-black-ter has-text-light">
+                <div class="card-content">
+                    <p class="is-size-6 has-text-grey-light mb-2">
+                    {{ roast.username or "Anonymous" }} &middot; {{ roast.language }}
+                    </p>
+
+                    <div class="content">
+                    <pre style="background-color: #1e1e1e; padding: 1em; border-radius: 6px; white-space: pre-wrap; word-break: break-word; overflow-x: auto;">
+        {{ roast.code }}</pre>
+                    <p class="is-italic has-text-grey mt-2">“{{ roast.comment }}”</p>
+                    </div>
+                </div>
+                </div>
+            </div>
+            {% endfor %}
         </div>
-        <label for="modelSelect">Model:</label>
-        <select id="modelSelect" name="model">
-          {% for m in models %}
-          <option value="{{ m }}">{{ m }}</option>
-          {% endfor %}
-        </select>
-        <label for="styleSelect">Roast Style:</label>
-        <select id="styleSelect" name="roast_style">
-          {% for style in roast_styles %}
-          <option value="{{ style }}">{{ style }}</option>
-          {% endfor %}
-        </select>
-        <label><input type="checkbox" name="detailed"> Detailed Roast</label>
-        <label><input type="checkbox" name="tts"> Enable Voice Output</label>
-        <label for="voiceSelect">Voice:</label>
-        <select id="voiceSelect" name="voice">
-          {% for v in voices %}
-          <option value="{{ v }}" {% if v == default_voice %}selected{% endif %}>{{ v }}</option>
-          {% endfor %}
-        </select>
-        <button type="submit">Roast Code</button>
-      </form>
+
+      <div class="has-text-centered mt-5">
+        <a href="/recent" class="button is-link is-light">See All Roasts</a>
+      </div>
     </div>
-    <hr>
-    <div class="form-section">
-      <h2>GitHub Profile Roast</h2>
-      <form hx-post="/roast/github-profile-html" hx-target="#roastResult" hx-swap="innerHTML">
-        <label for="profile">GitHub Profile:</label>
-        <input type="text" id="profile" name="profile" placeholder="schillij95">
-        <label for="repository">Repository (optional):</label>
-        <input type="text" id="repository" name="repository" placeholder="roast-my-code">
-        <label for="modelSelect2">Model:</label>
-        <select id="modelSelect2" name="model">
-          {% for m in models %}
-          <option value="{{ m }}">{{ m }}</option>
-          {% endfor %}
-        </select>
-        <label for="styleSelect2">Roast Style:</label>
-        <select id="styleSelect2" name="roast_style">
-          {% for style in roast_styles %}
-          <option value="{{ style }}">{{ style }}</option>
-          {% endfor %}
-        </select>
-        <label><input type="checkbox" name="detailed"> Detailed Roast</label>
-        <label><input type="checkbox" name="tts"> Enable Voice Output</label>
-        <label for="voiceSelect2">Voice:</label>
-        <select id="voiceSelect2" name="voice">
-          {% for v in voices %}
-          <option value="{{ v }}" {% if v == default_voice %}selected{% endif %}>{{ v }}</option>
-          {% endfor %}
-        </select>
-        <button type="submit">Roast GitHub</button>
-      </form>
+  </section>
+
+  <footer class="footer">
+    <div class="content has-text-centered">
+      <p>
+        Built for fearless devs. 💥 Roast responsibly.
+      </p>
     </div>
-    <div id="roastResult"></div>
-  </div>
-</body>
-</html>
+  </footer>
+{% endblock %}
+
+
+{% block scripts %}
+{% endblock %}

@@ -1,0 +1,39 @@
+    <div class="form-section">
+      <h2>GitHub Profile Roast</h2>
+      <form hx-post="/roast/github-profile-html" hx-target="#roastResult" hx-swap="innerHTML">
+        <label for="profile">GitHub Profile:</label>
+        <input type="text" id="profile" name="profile" placeholder="schillij95">
+        <label for="repository">Repository (optional):</label>
+        <input type="text" id="repository" name="repository" placeholder="roast-my-code">
+        <label for="modelSelect2">Model:</label>
+
+        <div class="select">
+        <select id="modelSelect2" name="model">
+          {% for m in models %}
+          <option value="{{ m }}">{{ m }}</option>
+          {% endfor %}
+        </select>
+        </div>
+
+        <label for="styleSelect2">Roast Style:</label>
+        <div class="select">
+        <select id="styleSelect2" name="roast_style">
+          {% for style in roast_styles %}
+          <option value="{{ style['id'] }}">{{ style['name'] }}</option>
+          {% endfor %}
+        </select>
+        </div>
+        <label><input type="checkbox" name="detailed"> Detailed Roast</label>
+        <label><input type="checkbox" name="tts"> Enable Voice Output</label>
+        <label for="voiceSelect2">Voice:</label>
+        <div class="select">
+        <select id="voiceSelect2" name="voice">
+          {% for v in voices %}
+          <option value="{{ v }}" {% if v == default_voice %}selected{% endif %}>{{ v }}</option>
+          {% endfor %}
+        </select>
+        </div>
+        <button class="button is-link" type="submit">Roast GitHub</button>
+      </form>
+    </div>
+  </div>
