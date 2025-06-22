@@ -77,7 +77,7 @@ async def index(request: Request):
 async def example(example: str):
     snippet = next((ex for ex in EXAMPLE_SNIPPETS if ex['title'] == example), None)
     code = snippet['code'] if snippet else ""
-    html = f"""<div id=\"codeArea\">\n<textarea id=\"code\" name=\"code\" rows=\"10\">{code}</textarea>\n</div>"""
+    html = f"""<div id=\"codeArea\">\n<textarea class="textarea" id=\"code\" name=\"code\" rows=\"10\">{code}</textarea>\n</div>"""
     return HTMLResponse(content=html)
   
 
