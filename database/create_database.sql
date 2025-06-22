@@ -25,20 +25,18 @@ create table roast_my_code.roast (
 );
 
 
-create table roast_my_code.clapbacks (
+create table roast_my_code.clapback (
     id serial primary key,
     llm_response text not null,
     audio_url text,
     open_api_cost float,
     create_ts timestamp default CURRENT_TIMESTAMP
 );
--- Tables for pay-it-forward credits
 
-CREATE TABLE IF NOT EXISTS roast_my_code.payitforward_credits (
+
+CREATE TABLE roast_my_code.payitforward_credits (
     id INT PRIMARY KEY,
     remaining BIGINT NOT NULL
 );
 
-INSERT INTO roast_my_code.payitforward_credits (id, remaining)
-    SELECT 1, 0
-    WHERE NOT EXISTS (SELECT 1 FROM roast_my_code.payitforward_credits WHERE id = 1);
+INSERT INTO roast_my_code.payitforward_credits (id, remaining) VALUES (1, 0);

@@ -18,7 +18,7 @@ def insert_clapback(llm_response: str, audio_url: str = None) -> int:
     with SessionLocal() as session:
         result = session.execute(
             text(
-                "INSERT INTO roast_my_code.clapbacks (llm_response, audio_url)"
+                "INSERT INTO roast_my_code.clapback (llm_response, audio_url)"
                 " VALUES (:llm_response, :audio_url) RETURNING id"
             ),
             {"llm_response": llm_response, "audio_url": audio_url},
@@ -32,7 +32,7 @@ def get_clapback(clapback_id: int):
         row = conn.execute(
             text(
                 "SELECT id, llm_response, audio_url, create_ts"
-                " FROM roast_my_code.clapbacks WHERE id = :id"
+                " FROM roast_my_code.clapback WHERE id = :id"
             ),
             {"id": clapback_id},
         ).mappings().first()
@@ -51,10 +51,7 @@ def increment_credits(amount: int = 1) -> int:
     """Increase credits by the given amount and return new total."""
     with engine.begin() as conn:
         conn.execute(
-            text(
-                "INSERT INTO roast_my_code.payitforward_credits (id, remaining) VALUES (1, :amt) "
-                "ON CONFLICT (id) DO UPDATE SET remaining = roast_my_code.payitforward_credits.remaining + :amt"
-            ),
+            text("UPDATE roast_my_code.payitforward_credits SET remaining=remaining + :amt WHERE id=1"),
             {"amt": amount},
         )
     return get_remaining_credits()
