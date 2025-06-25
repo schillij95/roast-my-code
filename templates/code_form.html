@@ -25,6 +25,7 @@
       <label class="label" for="code">Code</label>
       <div class="control">
         <pre><code class="language-python">{{ examples[0].code | e }}</code></pre>
+        <input name="code" type="hidden" value="{{ examples[0].code | e }}"></input>
       </div>
     </div>
 
@@ -87,7 +88,6 @@
         <button class="button is-link is-fullwidth" type="submit">Roast Code</button>
       </div>
     </div>
-
   </form>
 </div>
 

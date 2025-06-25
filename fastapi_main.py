@@ -94,6 +94,7 @@ async def example(example: str):
       <label class="label" for="code">Code</label>
       <div class="control">
         <pre><code class="language-python">{code}</code></pre>
+        <input name="code" type="hidden" value="{code}"></input>
       </div>
     </div>"""
     return HTMLResponse(content=html)
