@@ -1,12 +1,18 @@
 <div class="form-section box">
   <h2 class="title is-4">Code Snippet</h2>
   <form hx-post="/roast/code-snippet-html" hx-target="#roastResult" hx-swap="innerHTML">
-    
+
     <div class="field">
       <label class="label" for="exampleSelect">Example Snippets</label>
       <div class="control">
         <div class="select is-fullwidth">
-          <select id="exampleSelect" name="example" hx-get="/example" hx-target="#codeArea" hx-swap="outerHTML">
+          <select
+            id="exampleSelect"
+            name="example"
+            hx-get="/example"
+            hx-target="#codeArea"
+            hx-swap="outerHTML"
+          >
             {% for ex in examples %}
             <option value="{{ ex.title }}">{{ ex.title }}</option>
             {% endfor %}
@@ -18,7 +24,7 @@
     <div class="field" id="codeArea">
       <label class="label" for="code">Code</label>
       <div class="control">
-        <textarea id="code" class="textarea" name="code" rows="10">{{ examples[0].code }}</textarea>
+        <pre><code class="language-python">{{ examples[0].code | e }}</code></pre>
       </div>
     </div>
 
@@ -84,3 +90,12 @@
 
   </form>
 </div>
+
+<script>
+  hljs.highlightAll();
+  document.body.addEventListener('htmx:afterSettle', function(evt) {
+    if (evt.target.id === 'codeArea') {
+      hljs.highlightAll();
+    }
+  });
+</script>

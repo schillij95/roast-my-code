@@ -4,6 +4,9 @@ from fastapi.templating import Jinja2Templates
 import ollama
 import os
 from fastapi.staticfiles import StaticFiles
+from pygments.lexers import guess_lexer
+from pygments.util import ClassNotFound
+from html import escape
 
 from utils.speech import pipeline, cleanup_prompt, generate_tts_audio
 from utils.db import insert_clapback, get_clapback, get_remaining_credits, increment_credits, decrement_credits, reset_credits, get_latest_roasts, insert_roast, get_roast_styles
@@ -21,6 +24,15 @@ templates = Jinja2Templates(directory="templates")
 
 if "OLLAMA_HOST" in os.environ:
     ollama.Client(host=os.environ["OLLAMA_HOST"])
+
+
+def detect_language(code):
+    try:
+        lexer = guess_lexer(code)
+        return lexer.name
+    except ClassNotFound:
+        return None
+
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -77,9 +89,16 @@ async def index(request: Request):
 async def example(example: str):
     snippet = next((ex for ex in EXAMPLE_SNIPPETS if ex['title'] == example), None)
     code = snippet['code'] if snippet else ""
-    html = f"""<div id=\"codeArea\">\n<textarea class="textarea" id=\"code\" name=\"code\" rows=\"10\">{code}</textarea>\n</div>"""
+    code = escape(code)
+    html = f"""<div class="field" id="codeArea">
+      <label class="label" for="code">Code</label>
+      <div class="control">
+        <pre><code class="language-python">{code}</code></pre>
+      </div>
+    </div>"""
     return HTMLResponse(content=html)
   
+      
 
 @app.post("/create-checkout-session")
 async def create_checkout_session_route(request: Request):
@@ -185,7 +204,8 @@ async def roast_code_snippet(
     if not decrement_credits():
         return HTMLResponse(content="<div style='color:red;'>Out of credits. Please add more credits to continue.</div>", status_code=402)
     
-    roast_id = insert_roast(roast_style, code, None, None)
+    programming_language = detect_language(code)
+    roast_id = insert_roast(roast_style, code, None, None, programming_language)
 
     detailed_bool = bool(detailed)
     # include the human-readable description in the roast style
@@ -228,8 +248,8 @@ async def roast_github_profile(
     # Enforce pay-it-forward credit counter
     if not decrement_credits():
         return HTMLResponse(content="<div style='color:red;'>Out of credits. Please add more credits to continue.</div>", status_code=402)
-    
-    roast_id = insert_roast(roast_style, None, profile, repository)
+
+    roast_id = insert_roast(roast_style, None, profile, repository, None)
 
     detailed_bool = bool(detailed)
     if not repository:

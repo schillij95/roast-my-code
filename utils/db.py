@@ -23,14 +23,15 @@ def get_roast_styles():
         return [dict(row._mapping) for row in result.fetchall()]
 
 
-def insert_roast(roast_style, code: str = None, github_user: str = None, github_repository: str = None) -> int:
+def insert_roast(roast_style, code: str = None, github_user: str = None, github_repository: str = None, programming_language = None) -> int:
     with SessionLocal() as session:
         result = session.execute(
             text(
-                "INSERT INTO roast_my_code.roast (roast_style, code, github_user, github_repository)"
-                " VALUES (:roast_style, :code, :github_user, :github_repository) RETURNING id"
+                "INSERT INTO roast_my_code.roast (roast_style, code, programming_language, github_user, github_repository)"
+                " VALUES (:roast_style, :code, :programming_language, :github_user, :github_repository) RETURNING id"
             ),
-            {"roast_style": roast_style, "code": code, "github_user": github_user, "github_repository": github_repository},
+            {"roast_style": roast_style, "code": code, "programming_language": programming_language, 
+                "github_user": github_user, "github_repository": github_repository},
         )
         session.commit()
         return result.scalar_one()
@@ -77,9 +78,9 @@ def get_latest_roasts():
         result = conn.execute(
             text("""
                 SELECT r.*, c.llm_response
-                 FROM roast_my_code.roast r
-                 INNER JOIN roast_my_code.clapback c on c.id=r.id
-                 ORDER BY create_ts DESC FETCH FIRST 3 ROWS ONLY
+                FROM roast_my_code.roast r
+                INNER JOIN roast_my_code.clapback c on c.roast_id=r.id
+                ORDER BY create_ts DESC FETCH FIRST 3 ROWS ONLY
             """)
         )
     return result.fetchall()

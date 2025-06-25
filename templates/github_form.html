@@ -1,39 +1,80 @@
-    <div class="form-section">
-      <h2>GitHub Profile Roast</h2>
-      <form hx-post="/roast/github-profile-html" hx-target="#roastResult" hx-swap="innerHTML">
-        <label for="profile">GitHub Profile:</label>
-        <input type="text" id="profile" name="profile" placeholder="schillij95">
-        <label for="repository">Repository (optional):</label>
-        <input type="text" id="repository" name="repository" placeholder="roast-my-code">
-        <label for="modelSelect2">Model:</label>
+<div class="form-section box">
+  <h2 class="title is-4">GitHub Profile Roast</h2>
+  <form hx-post="/roast/github-profile-html" hx-target="#roastResult" hx-swap="innerHTML">
 
-        <div class="select">
-        <select id="modelSelect2" name="model">
-          {% for m in models %}
-          <option value="{{ m }}">{{ m }}</option>
-          {% endfor %}
-        </select>
-        </div>
-
-        <label for="styleSelect2">Roast Style:</label>
-        <div class="select">
-        <select id="styleSelect2" name="roast_style">
-          {% for style in roast_styles %}
-          <option value="{{ style['id'] }}">{{ style['name'] }}</option>
-          {% endfor %}
-        </select>
-        </div>
-        <label><input type="checkbox" name="detailed"> Detailed Roast</label>
-        <label><input type="checkbox" name="tts"> Enable Voice Output</label>
-        <label for="voiceSelect2">Voice:</label>
-        <div class="select">
-        <select id="voiceSelect2" name="voice">
-          {% for v in voices %}
-          <option value="{{ v }}" {% if v == default_voice %}selected{% endif %}>{{ v }}</option>
-          {% endfor %}
-        </select>
-        </div>
-        <button class="button is-link" type="submit">Roast GitHub</button>
-      </form>
+    <div class="field">
+      <label class="label" for="profile">GitHub Profile</label>
+      <div class="control">
+        <input class="input" type="text" id="profile" name="profile" placeholder="schillij95">
+      </div>
     </div>
-  </div>
+
+    <div class="field">
+      <label class="label" for="repository">Repository (optional)</label>
+      <div class="control">
+        <input class="input" type="text" id="repository" name="repository" placeholder="roast-my-code">
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label" for="modelSelect2">Model</label>
+      <div class="control">
+        <div class="select is-fullwidth">
+          <select id="modelSelect2" name="model">
+            {% for m in models %}
+            <option value="{{ m }}">{{ m }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label" for="styleSelect2">Roast Style</label>
+      <div class="control">
+        <div class="select is-fullwidth">
+          <select id="styleSelect2" name="roast_style">
+            {% for style in roast_styles %}
+            <option value="{{ style['id'] }}">{{ style['name'] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="field is-grouped is-grouped-multiline">
+      <div class="control">
+        <label class="checkbox">
+          <input type="checkbox" name="detailed">
+          Detailed Roast
+        </label>
+      </div>
+      <div class="control">
+        <label class="checkbox">
+          <input type="checkbox" name="tts">
+          Enable Voice Output
+        </label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label" for="voiceSelect2">Voice</label>
+      <div class="control">
+        <div class="select is-fullwidth">
+          <select id="voiceSelect2" name="voice">
+            {% for v in voices %}
+            <option value="{{ v }}" {% if v==default_voice %}selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="control">
+        <button class="button is-link is-fullwidth" type="submit">Roast GitHub</button>
+      </div>
+    </div>
+
+  </form>
+</div>

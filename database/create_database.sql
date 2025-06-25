@@ -34,6 +34,7 @@ create table roast_my_code.roast (
     github_user text, -- either github user/repository or code, mutually exclusive
     github_repository text, -- either github user/repository or code, mutually exclusive
     code text, -- either github user/repository or code, mutually exclusive
+    programming_language text, 
     roast_style integer not null,
     create_ts timestamp default CURRENT_TIMESTAMP,
     constraint fk_roast_style
