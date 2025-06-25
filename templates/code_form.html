@@ -1,41 +1,86 @@
-<div class="form-section">
-      <h2>Code Snippet</h2>
-      <form hx-post="/roast/code-snippet-html" hx-target="#roastResult" hx-swap="innerHTML">
-        <label for="exampleSelect">Example Snippets:</label>
-        <div class="select">
-            <select id="exampleSelect" name="example" hx-get="/example" hx-target="#codeArea" hx-swap="outerHTML">
+<div class="form-section box">
+  <h2 class="title is-4">Code Snippet</h2>
+  <form hx-post="/roast/code-snippet-html" hx-target="#roastResult" hx-swap="innerHTML">
+    
+    <div class="field">
+      <label class="label" for="exampleSelect">Example Snippets</label>
+      <div class="control">
+        <div class="select is-fullwidth">
+          <select id="exampleSelect" name="example" hx-get="/example" hx-target="#codeArea" hx-swap="outerHTML">
             {% for ex in examples %}
             <option value="{{ ex.title }}">{{ ex.title }}</option>
             {% endfor %}
-            </select>
+          </select>
         </div>
-        <div id="codeArea">
-          <textarea id="code" class="textarea" name="code" rows="10">{{ examples[0].code }}</textarea>
-        </div>
-        <label for="modelSelect">Model:</label>
-        <div class="select">
-        <select id="modelSelect" name="model">
-          {% for m in models %}
-          <option value="{{ m }}">{{ m }}</option>
-          {% endfor %}
-        </select>
-        </div>
-        <label for="styleSelect">Roast Style:</label>
-        <div class="select">
-        <select id="styleSelect" name="roast_style">
-          {% for style in roast_styles %}
-          <option value="{{ style['id'] }}">{{ style['name'] }}</option>
-          {% endfor %}
-        </select>
-        </div>
-        <label><input type="checkbox" name="detailed"> Detailed Roast</label>
-        <label><input type="checkbox" name="tts"> Enable Voice Output</label>
-        <label for="voiceSelect">Voice:</label>
-        <select id="voiceSelect" name="voice">
-          {% for v in voices %}
-          <option value="{{ v }}" {% if v == default_voice %}selected{% endif %}>{{ v }}</option>
-          {% endfor %}
-        </select>
-        <button class="button is-link" type="submit">Roast Code</button>
-      </form>
+      </div>
     </div>
+
+    <div class="field" id="codeArea">
+      <label class="label" for="code">Code</label>
+      <div class="control">
+        <textarea id="code" class="textarea" name="code" rows="10">{{ examples[0].code }}</textarea>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label" for="modelSelect">Model</label>
+      <div class="control">
+        <div class="select is-fullwidth">
+          <select id="modelSelect" name="model">
+            {% for m in models %}
+            <option value="{{ m }}">{{ m }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label" for="styleSelect">Roast Style</label>
+      <div class="control">
+        <div class="select is-fullwidth">
+          <select id="styleSelect" name="roast_style">
+            {% for style in roast_styles %}
+            <option value="{{ style['id'] }}">{{ style['name'] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="field is-grouped is-grouped-multiline">
+      <div class="control">
+        <label class="checkbox">
+          <input type="checkbox" name="detailed">
+          Detailed Roast
+        </label>
+      </div>
+      <div class="control">
+        <label class="checkbox">
+          <input type="checkbox" name="tts">
+          Enable Voice Output
+        </label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label" for="voiceSelect">Voice</label>
+      <div class="control">
+        <div class="select is-fullwidth">
+          <select id="voiceSelect" name="voice">
+            {% for v in voices %}
+            <option value="{{ v }}" {% if v == default_voice %}selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="control">
+        <button class="button is-link is-fullwidth" type="submit">Roast Code</button>
+      </div>
+    </div>
+
+  </form>
+</div>
